@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserEmail() {
+      return request.auth.token.email != null ? request.auth.token.email.lower() : null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && getUserEmail() == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(getUserEmail())).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(getUserEmail())) && 
+            (getUserData().role == 'admin' || getUserData().role == 'super_admin')) || 
+          getUserEmail() == "chenkarfei@gmail.com" ||
+          getUserEmail() == "evotech4001@gmail.com"
+        );
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(getUserEmail())) && 
+            getUserData().role == 'super_admin') || 
+          getUserEmail() == "chenkarfei@gmail.com" ||
+          getUserEmail() == "evotech4001@gmail.com"
+        );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser(data) {
+      return data.role in ['super_admin', 'admin', 'restaurant'] &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() < 100 &&
+             data.createdAt is string &&
+             data.isActive is bool;
+    }
+    
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.order is number &&
+             data.isActive is bool;
+    }
+    
+    function isValidItem(data) {
+      return data.categoryId is string && data.categoryId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.priceRangeMin is number && data.priceRangeMin >= 0 &&
+             data.priceRangeMax is number && data.priceRangeMax >= data.priceRangeMin &&
+             data.unit is string && data.unit.size() > 0 && data.unit.size() < 50 &&
+             data.isActive is bool;
+    }
+    
+    function isValidOrder(data) {
+      return data.restaurantId is string && data.restaurantId.size() > 0 &&
+             data.restaurantName is string && data.restaurantName.size() > 0 && data.restaurantName.size() < 100 &&
+             data.status in ['draft', 'submitted', 'acknowledged', 'delivered', 'cancelled'] &&
+             data.items is list && data.items.size() <= 200 &&
+             data.orderDate is string && data.orderDate.size() == 10 &&
+             data.createdAt is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isSuperAdmin() && isValidUser(request.resource.data);
+      allow update: if isSuperAdmin() && isValidUser(request.resource.data);
+      allow delete: if false; // Soft delete via isActive
+    }
+    
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidCategory(request.resource.data);
+      allow update: if isAdmin() && isValidCategory(request.resource.data);
+      allow delete: if false; // Soft delete via isActive
+    }
+    
+    match /items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidItem(request.resource.data);
+      allow update: if isAdmin() && isValidItem(request.resource.data);
+      allow delete: if false; // Soft delete via isActive
+    }
+    
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (getUserEmail() == resource.data.restaurantId || isAdmin());
+      
+      // Restaurants can create drafts or submitted orders
+      allow create: if isAuthenticated() && 
+                    getUserEmail() == request.resource.data.restaurantId && 
+                    isValidOrder(request.resource.data) &&
+                    request.resource.data.status in ['draft', 'submitted'];
+                    
+      // Restaurants can update their own orders if they are draft or submitted
+      // Admins can update to acknowledge or deliver
+      allow update: if isAuthenticated() && isValidOrder(request.resource.data) &&
+                    (
+                      (getUserEmail() == resource.data.restaurantId && resource.data.status in ['draft', 'submitted'] && request.resource.data.status in ['draft', 'submitted']) ||
+                      (isAdmin() && request.resource.data.status in ['acknowledged', 'delivered', 'cancelled'])
+                    );
+                    
+      allow delete: if false; // No deleting orders, only updating status
+    }
+  }
+}

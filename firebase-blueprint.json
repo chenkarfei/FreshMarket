@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system (Super Admin, Admin/Driver, or Restaurant).",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "restaurant"],
+          "description": "The role of the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the user or restaurant."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the user."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number."
+        },
+        "address": {
+          "type": "string",
+          "description": "Delivery address for restaurants."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["role", "name", "email", "createdAt", "isActive"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Item category (e.g., Vegetables, Meat, Seafood).",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number"
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "order", "isActive"]
+    },
+    "Item": {
+      "title": "Item",
+      "description": "An item available for purchase.",
+      "type": "object",
+      "properties": {
+        "categoryId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "priceRangeMin": {
+          "type": "number"
+        },
+        "priceRangeMax": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (e.g., kg, bundle, box)."
+        },
+        "isActive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["categoryId", "name", "priceRangeMin", "priceRangeMax", "unit", "isActive"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A daily order placed by a restaurant.",
+      "type": "object",
+      "properties": {
+        "restaurantId": {
+          "type": "string"
+        },
+        "restaurantName": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "submitted", "acknowledged"],
+          "description": "Current status of the order."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "itemId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "priceRangeMin": { "type": "number" },
+              "priceRangeMax": { "type": "number" },
+              "unit": { "type": "string" }
+            },
+            "required": ["itemId", "name", "quantity", "priceRangeMin", "priceRangeMax", "unit"]
+          }
+        },
+        "totalMin": {
+          "type": "number"
+        },
+        "totalMax": {
+          "type": "number"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "The date the order is intended for (YYYY-MM-DD)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "submittedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "acknowledgedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["restaurantId", "restaurantName", "status", "items", "totalMin", "totalMax", "orderDate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of all users."
+    },
+    "categories": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Collection of item categories."
+    },
+    "items": {
+      "schema": { "$ref": "#/entities/Item" },
+      "description": "Collection of items."
+    },
+    "orders": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Collection of daily orders."
+    }
+  }
+}
