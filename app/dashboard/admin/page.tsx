@@ -461,10 +461,8 @@ export default function AdminDashboard() {
             <div className="flex items-center space-x-2">
               {selectedItems.length > 0 && (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      Bulk Actions ({selectedItems.length})
-                    </Button>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+                    Bulk Actions ({selectedItems.length})
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => handleBulkActivate(true)}>
