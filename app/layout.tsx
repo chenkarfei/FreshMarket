@@ -1,24 +1,28 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Geist } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { Toaster } from '@/components/ui/sonner';
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-heading' });
 
 export const metadata: Metadata = {
-  title: 'PasarHub: Restaurant Supply Chain',
+  title: 'FreshMarket: Restaurant Supply Chain',
   description: 'B2B daily market procurement system for restaurants in Malaysia.',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans", inter.variable, spaceGrotesk.variable)}>
+      <body suppressHydrationWarning className="bg-slate-50 text-slate-900 antialiased">
         <AuthProvider>
-          {children}
-          <Toaster />
+          <LanguageProvider>
+            {children}
+            <Toaster />
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>
