@@ -341,7 +341,7 @@ export default function RestaurantDashboard() {
                 className="h-10 w-full md:w-64 pl-10 rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white focus:border-emerald-200 focus:ring-emerald-50 transition-all text-sm"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val ?? "")}>
               <SelectTrigger className="h-10 w-40 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600">
                 <div className="flex items-center gap-2">
                   <Filter className="h-3.5 w-3.5" />
