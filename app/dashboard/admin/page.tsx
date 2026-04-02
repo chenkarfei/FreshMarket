@@ -36,7 +36,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText } from 'lucide-react';
+import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText, CheckCircle2, Search, Printer } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -89,6 +89,7 @@ export default function AdminDashboard() {
   const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, priceRangeMin: number | string, priceRangeMax: number | string, unit: string }>({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkCategoryDialogOpen, setIsBulkCategoryDialogOpen] = useState(false);
+  const [isBulkAcknowledgeLoading, setIsBulkAcknowledgeLoading] = useState(false);
   const [bulkCategoryForm, setBulkCategoryForm] = useState<{ categoryId: string }>({ categoryId: '' });
 
   // Category Form State
@@ -220,6 +221,30 @@ export default function AdminDashboard() {
       toast.success(t('order_acknowledged'));
     } catch (error: any) {
       toast.error(error.message);
+    }
+  };
+
+  const bulkAcknowledge = async () => {
+    const submittedOrders = orders.filter(o => o.status === 'submitted');
+    if (submittedOrders.length === 0) {
+      toast.info(t('no_submitted_orders_to_acknowledge'));
+      return;
+    }
+
+    setIsBulkAcknowledgeLoading(true);
+    try {
+      const updatePromises = submittedOrders.map(order => 
+        updateDoc(doc(db, 'orders', order.id), {
+          status: 'acknowledged',
+          acknowledgedAt: new Date().toISOString()
+        })
+      );
+      await Promise.all(updatePromises);
+      toast.success(`${t('successfully_acknowledged_orders')}: ${submittedOrders.length}`);
+    } catch (error: any) {
+      toast.error(t('failed_to_update') + ': ' + error.message);
+    } finally {
+      setIsBulkAcknowledgeLoading(false);
     }
   };
 
@@ -369,116 +394,119 @@ export default function AdminDashboard() {
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h2 className="text-4xl font-black tracking-tight text-slate-900 mb-1">
             {userData?.role === 'super_admin' ? t('super_admin_dashboard') : t('admin_dashboard')}
           </h2>
-          <p className="text-sm text-slate-500 mt-1">{t('manage_orders_and_inventory')}</p>
+          <p className="text-slate-500 text-sm font-medium">{t('manage_orders_and_inventory')} with precision.</p>
         </div>
-        <div className="flex items-center gap-3 bg-slate-50/50 p-1.5 rounded-lg border border-slate-100">
-          <Label htmlFor="date-picker" className="whitespace-nowrap text-xs font-medium text-slate-500 px-2 uppercase tracking-wider">{t('select_date')}</Label>
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-white/50 shadow-sm"
+        >
+          <Label htmlFor="date-picker" className="whitespace-nowrap text-[10px] font-black text-slate-400 px-2 uppercase tracking-widest">{t('select_date')}</Label>
           <Input 
             id="date-picker" 
             type="date" 
             value={selectedDate} 
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-auto border-none shadow-none focus-visible:ring-0 bg-transparent text-sm font-medium h-8"
+            className="w-auto border-none shadow-none focus-visible:ring-0 bg-transparent text-sm font-bold h-8 text-emerald-600"
           />
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/50 transition-all hover:border-emerald-100 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
-              <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
-                <ShoppingBag className="h-4 w-4" />
+          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
+              <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
+                <ShoppingBag className="h-5 w-5" />
               </div>
             </div>
-            <div className="text-3xl font-black text-slate-900">{totalOrders}</div>
-            <div className="flex items-center mt-2 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-              <Clock className="h-3 w-3 mr-1" />
+            <div className="text-5xl font-black text-slate-900 tracking-tighter">{totalOrders}</div>
+            <div className="flex items-center mt-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2" />
               {format(new Date(selectedDate), 'MMM dd, yyyy')}
             </div>
           </div>
         </motion.div>
         
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/50 transition-all hover:border-blue-100 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Est. Revenue</span>
-              <div className="flex items-center justify-center h-8 w-8 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 text-[10px] font-black">
+          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Est. Revenue</span>
+              <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-2xl text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-sm text-[11px] font-black">
                 RM
               </div>
             </div>
-            <div className="text-3xl font-black text-slate-900">
-              <span className="text-sm font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
+            <div className="text-4xl font-black text-slate-900 tracking-tighter">
+              <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
               {totalRevenueMin.toFixed(0)} - {totalRevenueMax.toFixed(0)}
             </div>
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-2">Based on current orders</p>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-4">Live Market Estimates</p>
           </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/50 transition-all hover:border-amber-100 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Restaurants</span>
-              <div className="p-2 bg-amber-50 rounded-xl text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300">
-                <Users className="h-4 w-4" />
+          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Restaurants</span>
+              <div className="p-3 bg-amber-50 rounded-2xl text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-sm">
+                <Users className="h-5 w-5" />
               </div>
             </div>
-            <div className="text-3xl font-black text-slate-900">{activeRestaurants}</div>
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mt-2">Placed orders today</p>
+            <div className="text-5xl font-black text-slate-900 tracking-tighter">{activeRestaurants}</div>
+            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-4">Participation Today</p>
           </div>
         </motion.div>
       </div>
 
       <Tabs defaultValue={userData?.role === 'super_admin' ? 'users' : 'orders'} className="w-full">
-        <TabsList className="mb-8 flex w-full justify-start overflow-x-auto bg-slate-100/80 p-1 rounded-2xl gap-1 h-auto border-none">
+        <TabsList className="mb-10 flex w-full justify-start overflow-x-auto bg-slate-200/40 backdrop-blur-md p-1.5 rounded-[1.5rem] gap-1 h-auto border border-white/50 shadow-inner">
           {userData?.role === 'super_admin' && (
             <TabsTrigger 
               value="users" 
-              className="rounded-xl px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300"
+              className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
             >
-              <div className="flex items-center gap-2">
-                <Users className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-2.5">
+                <Users className="h-4 w-4" />
                 {t('users')}
               </div>
             </TabsTrigger>
           )}
           <TabsTrigger 
             value="orders"
-            className="rounded-xl px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300"
+            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="h-4 w-4" />
               {t('tonights_orders')}
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="categories"
-            className="rounded-xl px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300"
+            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2.5">
+              <Filter className="h-4 w-4" />
               {t('manage_categories')}
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="items"
-            className="rounded-xl px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300"
+            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
-            <div className="flex items-center gap-2">
-              <Package className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2.5">
+              <Package className="h-4 w-4" />
               {t('manage_items')}
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="report"
-            className="rounded-xl px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300"
+            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2.5">
+              <TrendingUp className="h-4 w-4" />
               {t('purchase_report')}
             </div>
           </TabsTrigger>
@@ -490,62 +518,84 @@ export default function AdminDashboard() {
           </TabsContent>
         )}
         
-        <TabsContent value="orders" className="space-y-4">
-          <Card className="border-slate-100 shadow-none overflow-hidden">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-              <CardTitle className="text-lg font-medium text-slate-900">{t('orders_for')} {format(new Date(selectedDate), 'dd MMM yyyy')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+        <TabsContent value="orders" className="space-y-6">
+          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+            <div className="p-8 border-b border-slate-100 bg-white/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('orders_for')} {format(new Date(selectedDate), 'dd MMM yyyy')}</h4>
+                {orders.some(o => o.status === 'submitted') && (
+                  <Button 
+                    onClick={bulkAcknowledge} 
+                    disabled={isBulkAcknowledgeLoading}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 h-10 text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                  >
+                    {isBulkAcknowledgeLoading ? (
+                      <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    {isBulkAcknowledgeLoading ? t('acknowledging') : t('bulk_acknowledge')}
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pl-6">{t('restaurant')}</TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('status')}</TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('total_items')}</TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('est_total')}</TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pr-6 text-right">{t('actions')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('restaurant')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('status')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('total_items')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('est_total')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8 text-right">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map(order => (
-                    <TableRow key={order.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-medium text-slate-900 py-4 pl-6">{order.restaurantName}</TableCell>
-                      <TableCell className="py-4">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                  {orders.map((order, idx) => (
+                    <motion.tr 
+                      key={order.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="border-slate-50 hover:bg-emerald-50/30 transition-colors group"
+                    >
+                      <TableCell className="font-bold text-slate-900 py-6 pl-8">{order.restaurantName}</TableCell>
+                      <TableCell className="py-6">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                           order.status === 'acknowledged' ? 'bg-emerald-50 text-emerald-600' : 
                           order.status === 'submitted' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'
                         }`}>
                           {t(order.status)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-slate-600 py-4">{order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</TableCell>
-                      <TableCell className="text-slate-600 py-4">
-                        <span className="text-xs text-slate-400 mr-1">RM</span>
+                      <TableCell className="text-slate-600 py-6 font-medium">{order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">
+                        <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                         {order.totalMin.toFixed(2)} - {order.totalMax.toFixed(2)}
                       </TableCell>
-                      <TableCell className="py-4 pr-6 text-right">
+                      <TableCell className="py-6 pr-8 text-right">
                         <Dialog>
-                          <DialogTrigger render={<Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">{t('view_details')}</Button>} />
-                          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl">
+                          <DialogTrigger render={<Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest">{t('view_details')}</Button>} />
+                          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl glass-card rounded-[2rem]">
                             <DialogHeader>
-                              <DialogTitle className="text-xl font-semibold text-slate-900">{t('order_details')}: {order.restaurantName}</DialogTitle>
+                              <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{t('order_details')}: {order.restaurantName}</DialogTitle>
                             </DialogHeader>
-                            <div className="overflow-y-auto flex-1 pr-2 mt-4">
+                            <div className="overflow-y-auto flex-1 pr-2 mt-6">
                               <Table>
                                 <TableHeader>
                                   <TableRow className="hover:bg-transparent border-slate-100">
-                                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider">{t('item')}</TableHead>
-                                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider">{t('quantity')}</TableHead>
-                                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider text-right">{t('est_price')}</TableHead>
+                                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">{t('item')}</TableHead>
+                                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4">{t('quantity')}</TableHead>
+                                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-4 text-right">{t('est_price')}</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {order.items.map((item: any, idx: number) => (
                                     <TableRow key={idx} className="border-slate-50">
-                                      <TableCell className="text-slate-900 font-medium">{item.name}</TableCell>
-                                      <TableCell className="text-slate-600">{item.quantity} {item.unit}</TableCell>
-                                      <TableCell className="text-slate-600 text-right">
-                                        <span className="text-[10px] text-slate-400 mr-1">RM</span>
+                                      <TableCell className="text-slate-900 font-bold py-4">{item.name}</TableCell>
+                                      <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {item.unit}</TableCell>
+                                      <TableCell className="text-slate-600 text-right font-medium py-4">
+                                        <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                                         {(item.priceRangeMin * item.quantity).toFixed(2)} - {(item.priceRangeMax * item.quantity).toFixed(2)}
                                       </TableCell>
                                     </TableRow>
@@ -555,7 +605,7 @@ export default function AdminDashboard() {
                             </div>
                             {order.status === 'submitted' && (
                               <div className="mt-8 pt-6 border-t border-slate-100">
-                                <Button onClick={() => acknowledgeOrder(order.id)} className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-11 transition-all">
+                                <Button onClick={() => acknowledgeOrder(order.id)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300">
                                   {t('acknowledge_order')}
                                 </Button>
                               </div>
@@ -563,64 +613,66 @@ export default function AdminDashboard() {
                           </DialogContent>
                         </Dialog>
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   ))}
                   {orders.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="p-4 bg-slate-50 rounded-full mb-4">
-                            <ShoppingBag className="h-8 w-8 text-slate-300" />
+                          <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                            <ShoppingBag className="h-10 w-10 text-slate-300" />
                           </div>
-                          <p className="text-slate-900 font-medium">{t('no_orders_tonight')}</p>
-                          <p className="text-slate-400 text-sm mt-1">Orders for the selected date will appear here.</p>
+                          <p className="text-slate-900 font-black tracking-tight">{t('no_orders_tonight')}</p>
+                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Orders for the selected date will appear here.</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="categories" className="space-y-4">
+        <TabsContent value="categories" className="space-y-6">
           <div className="flex justify-end mb-4">
             <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-              <Button 
-                onClick={() => {
-                  setCategoryForm({ id: '', name: '', order: categories.length + 1 });
-                  setIsCategoryDialogOpen(true);
-                }}
-                className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6"
-              >
-                {t('add_new_category')}
-              </Button>
-              <DialogContent className="border-none shadow-2xl">
+              <DialogTrigger render={
+                <Button 
+                  onClick={() => {
+                    setCategoryForm({ id: '', name: '', order: categories.length + 1 });
+                    setIsCategoryDialogOpen(true);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                >
+                  {t('add_new_category')}
+                </Button>
+              } />
+              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold text-slate-900">{categoryForm.id ? t('edit_category') : t('add_new_category')}</DialogTitle>
+                  <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{categoryForm.id ? t('edit_category') : t('add_new_category')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleCategorySubmit} className="space-y-6 mt-4">
+                <form onSubmit={handleCategorySubmit} className="space-y-6 mt-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('category_name')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category_name')}</Label>
                     <Input 
                       value={categoryForm.name} 
                       onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} 
                       required 
-                      className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('display_order')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('display_order')}</Label>
                     <Input 
                       type="number" 
                       value={categoryForm.order} 
                       onChange={e => setCategoryForm({...categoryForm, order: e.target.value === '' ? '' : parseInt(e.target.value)})} 
                       required 
-                      className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-11 transition-all" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_category')}
                   </Button>
@@ -628,11 +680,11 @@ export default function AdminDashboard() {
               </DialogContent>
             </Dialog>
           </div>
-          <Card className="border-slate-100 shadow-none overflow-hidden">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-              <CardTitle className="text-lg font-medium text-slate-900">{t('market_categories')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+            <div className="p-8 border-b border-slate-100 bg-white/50">
+              <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_categories')}</h4>
+            </div>
+            <div className="p-0">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -641,10 +693,10 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="w-12 py-4 pl-6"></TableHead>
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('category_name')}</TableHead>
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('display_order')}</TableHead>
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pr-6 text-right">{t('actions')}</TableHead>
+                      <TableHead className="w-12 py-6 pl-8"></TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('category_name')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('display_order')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8 text-right">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -668,11 +720,11 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableCell colSpan={4} className="h-64 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="p-4 bg-slate-50 rounded-full mb-4">
-                              <Package className="h-8 w-8 text-slate-300" />
+                            <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                              <Package className="h-10 w-10 text-slate-300" />
                             </div>
-                            <p className="text-slate-900 font-medium">{t('no_categories_found')}</p>
-                            <p className="text-slate-400 text-sm mt-1">Add a new category to get started.</p>
+                            <p className="text-slate-900 font-black tracking-tight">{t('no_categories_found')}</p>
+                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Add a new category to get started.</p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -680,41 +732,39 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               </DndContext>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="items" className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div className="flex items-center space-x-3 w-full sm:w-auto">
-              <div className="relative w-full sm:w-72">
+        <TabsContent value="items" className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-4">
+            <div className="flex items-center space-x-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-80">
                 <Input 
                   placeholder={t('search_items')}
                   value={itemSearchQuery}
                   onChange={(e) => setItemSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-10 pl-9"
+                  className="w-full rounded-2xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 pl-12 font-bold bg-white/50 backdrop-blur-sm"
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                  <Search className="h-5 w-5 text-slate-400" />
                 </div>
               </div>
               {selectedItems.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger render={
-                    <Button variant="outline" className="rounded-lg border-slate-200 text-slate-600 h-10">
-                      {t('bulk_actions')} <span className="ml-1.5 px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold">{selectedItems.length}</span>
+                    <Button variant="outline" className="rounded-2xl border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 h-12 px-6 font-bold flex items-center gap-2 shadow-sm">
+                      {t('bulk_actions')} <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black">{selectedItems.length}</span>
                     </Button>
                   } />
-                  <DropdownMenuContent className="border-slate-100 shadow-xl">
-                    <DropdownMenuItem onClick={() => handleBulkActivate(true)} className="text-sm py-2">
+                  <DropdownMenuContent className="border-none shadow-2xl glass-card rounded-2xl p-2 min-w-[200px]">
+                    <DropdownMenuItem onClick={() => handleBulkActivate(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors">
                       {t('activate_selected')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkActivate(false)} className="text-sm py-2">
+                    <DropdownMenuItem onClick={() => handleBulkActivate(false)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
                       {t('deactivate_selected')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsBulkCategoryDialogOpen(true)} className="text-sm py-2">
+                    <DropdownMenuItem onClick={() => setIsBulkCategoryDialogOpen(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors">
                       {t('change_category')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -722,72 +772,74 @@ export default function AdminDashboard() {
               )}
             </div>
             <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
-              <Button 
-                onClick={() => {
-                  setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
-                  setIsItemDialogOpen(true);
-                }}
-                className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 h-10"
-              >
-                {t('add_new_item')}
-              </Button>
-              <DialogContent className="border-none shadow-2xl">
+              <DialogTrigger render={
+                <Button 
+                  onClick={() => {
+                    setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
+                    setIsItemDialogOpen(true);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                >
+                  {t('add_new_item')}
+                </Button>
+              } />
+              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold text-slate-900">{itemForm.id ? t('edit_item') : t('add_new_item')}</DialogTitle>
+                  <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{itemForm.id ? t('edit_item') : t('add_new_item')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleItemSubmit} className="space-y-6 mt-4">
+                <form onSubmit={handleItemSubmit} className="space-y-6 mt-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('category')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category')}</Label>
                     <Select value={itemForm.categoryId} onValueChange={v => setItemForm({...itemForm, categoryId: v || ''})}>
-                      <SelectTrigger className="rounded-lg border-slate-200 focus:ring-0 h-11"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
-                      <SelectContent className="border-slate-100 shadow-xl">
+                      <SelectTrigger className="rounded-xl border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectContent className="border-slate-100 shadow-xl rounded-xl">
                         {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('item_name')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('item_name')}</Label>
                     <Input 
                       value={itemForm.name} 
                       onChange={e => setItemForm({...itemForm, name: e.target.value})} 
                       required 
-                      className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('min_price')} (RM)</Label>
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('min_price')} (RM)</Label>
                       <Input 
                         type="number" 
                         step="0.01" 
                         value={itemForm.priceRangeMin} 
                         onChange={e => setItemForm({...itemForm, priceRangeMin: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
                         required 
-                        className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('max_price')} (RM)</Label>
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('max_price')} (RM)</Label>
                       <Input 
                         type="number" 
                         step="0.01" 
                         value={itemForm.priceRangeMax} 
                         onChange={e => setItemForm({...itemForm, priceRangeMax: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
                         required 
-                        className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('unit')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit')}</Label>
                     <Input 
                       value={itemForm.unit} 
                       onChange={e => setItemForm({...itemForm, unit: e.target.value})} 
                       required 
-                      className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-11 transition-all" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_item')}
                   </Button>
@@ -796,21 +848,21 @@ export default function AdminDashboard() {
             </Dialog>
 
             <Dialog open={isBulkCategoryDialogOpen} onOpenChange={setIsBulkCategoryDialogOpen}>
-              <DialogContent className="border-none shadow-2xl">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold text-slate-900">{t('change_category_for')} {selectedItems.length} {t('items')}</DialogTitle>
+                  <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{t('change_category_for')} {selectedItems.length} {t('items')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleBulkCategoryChange} className="space-y-6 mt-4">
+                <form onSubmit={handleBulkCategoryChange} className="space-y-6 mt-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('new_category')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('new_category')}</Label>
                     <Select value={bulkCategoryForm.categoryId} onValueChange={v => setBulkCategoryForm({ categoryId: v || '' })}>
-                      <SelectTrigger className="rounded-lg border-slate-200 focus:ring-0 h-11"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
-                      <SelectContent className="border-slate-100 shadow-xl">
+                      <SelectTrigger className="rounded-xl border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectContent className="border-slate-100 shadow-xl rounded-xl">
                         {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-11 transition-all" disabled={!bulkCategoryForm.categoryId || isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={!bulkCategoryForm.categoryId || isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('update_category')}
                   </Button>
@@ -818,27 +870,27 @@ export default function AdminDashboard() {
               </DialogContent>
             </Dialog>
           </div>
-          <Card className="border-slate-100 shadow-none overflow-hidden">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-              <CardTitle className="text-lg font-medium text-slate-900">{t('market_items')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+            <div className="p-8 border-b border-slate-100 bg-white/50">
+              <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_items')}</h4>
+            </div>
+            <div className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="w-12 py-4 pl-6">
+                    <TableHead className="w-12 py-6 pl-8">
                       <Checkbox 
                         checked={items.length > 0 && selectedItems.length === items.length}
                         onCheckedChange={toggleAllItems}
                         aria-label="Select all items"
-                        className="border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                        className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-md"
                       />
                     </TableHead>
                     <TableHead 
-                      className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 cursor-pointer hover:text-slate-900 transition-colors"
+                      className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 cursor-pointer hover:text-emerald-600 transition-colors"
                       onClick={() => requestSort('name')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {t('item_name')}
                         {sortConfig.key === 'name' ? (
                           sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
@@ -846,10 +898,10 @@ export default function AdminDashboard() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 cursor-pointer hover:text-slate-900 transition-colors"
+                      className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 cursor-pointer hover:text-emerald-600 transition-colors"
                       onClick={() => requestSort('category')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {t('category')}
                         {sortConfig.key === 'category' ? (
                           sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
@@ -857,138 +909,148 @@ export default function AdminDashboard() {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 cursor-pointer hover:text-slate-900 transition-colors"
+                      className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 cursor-pointer hover:text-emerald-600 transition-colors"
                       onClick={() => requestSort('price')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {t('est_price')}
                         {sortConfig.key === 'price' ? (
                           sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                         ) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
                       </div>
                     </TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('unit')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('unit')}</TableHead>
                     <TableHead 
-                      className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 cursor-pointer hover:text-slate-900 transition-colors"
+                      className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 cursor-pointer hover:text-emerald-600 transition-colors"
                       onClick={() => requestSort('status')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {t('status')}
                         {sortConfig.key === 'status' ? (
                           sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                         ) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
                       </div>
                     </TableHead>
-                    <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pr-6 text-right">{t('actions')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8 text-right">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredItems.map(item => (
-                    <TableRow key={item.id} className={`border-slate-50 hover:bg-slate-50/50 transition-colors ${item.isActive === false ? 'opacity-40' : ''}`}>
-                      <TableCell className="py-4 pl-6">
+                  {filteredItems.map((item, idx) => (
+                    <motion.tr 
+                      key={item.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.02 }}
+                      className={`border-slate-50 hover:bg-emerald-50/30 transition-colors group ${item.isActive === false ? 'opacity-40' : ''}`}
+                    >
+                      <TableCell className="py-6 pl-8">
                         <Checkbox 
                           checked={selectedItems.includes(item.id)}
                           onCheckedChange={() => toggleItemSelection(item.id)}
                           aria-label={`Select ${item.name}`}
-                          className="border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                          className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-md"
                         />
                       </TableCell>
-                      <TableCell className="font-medium text-slate-900 py-4">{item.name}</TableCell>
-                      <TableCell className="text-slate-600 py-4">{categories.find(c => c.id === item.categoryId)?.name || 'Unknown'}</TableCell>
-                      <TableCell className="text-slate-600 py-4">
-                        <span className="text-[10px] text-slate-400 mr-1">RM</span>
+                      <TableCell className="font-bold text-slate-900 py-6">{item.name}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">{categories.find(c => c.id === item.categoryId)?.name || 'Unknown'}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">
+                        <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                         {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-slate-600 py-4">{item.unit}</TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="text-slate-600 py-6 font-medium">{item.unit}</TableCell>
+                      <TableCell className="py-6">
                         <Badge 
                           variant={item.isActive !== false ? "outline" : "secondary"} 
                           className={
                             item.isActive !== false 
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[10px] uppercase tracking-wider" 
-                            : "bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase tracking-wider"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full" 
+                            : "bg-slate-100 text-slate-500 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full"
                           }
                         >
                           {item.isActive !== false ? t('active') : t('inactive')}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4 pr-6 text-right">
-                        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100" onClick={() => {
+                      <TableCell className="py-6 pr-8 text-right">
+                        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={() => {
                           setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit });
                           setIsItemDialogOpen(true);
                         }}>{t('edit')}</Button>
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   ))}
                   {filteredItems.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="p-4 bg-slate-50 rounded-full mb-4">
-                            <Package className="h-8 w-8 text-slate-300" />
+                          <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                            <Package className="h-10 w-10 text-slate-300" />
                           </div>
-                          <p className="text-slate-900 font-medium">{items.length === 0 ? t('no_items_found') : t('no_items_match')}</p>
-                          <p className="text-slate-400 text-sm mt-1">Try adjusting your search or add a new item.</p>
+                          <p className="text-slate-900 font-black tracking-tight">{items.length === 0 ? t('no_items_found') : t('no_items_match')}</p>
+                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Try adjusting your search or add a new item.</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="report" className="space-y-4">
-          <Card className="border-slate-100 shadow-none overflow-hidden">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-medium text-slate-900">{t('consolidated_purchase_list')} ({format(new Date(selectedDate), 'dd MMM yyyy')})</CardTitle>
-              <Button onClick={handlePrintList} variant="outline" className="rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50">
-                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
+        <TabsContent value="report" className="space-y-6">
+          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+            <div className="p-8 border-b border-slate-100 bg-white/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('consolidated_purchase_list')} ({format(new Date(selectedDate), 'dd MMM yyyy')})</h4>
+              <Button onClick={handlePrintList} variant="outline" className="rounded-2xl border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 h-12 px-8 font-black text-[11px] uppercase tracking-widest transition-all shadow-sm flex items-center gap-2">
+                <Printer className="h-4 w-4" />
                 {t('print_list')}
               </Button>
-            </CardHeader>
-            <CardContent className="p-0">
+            </div>
+            <div className="p-0">
               <div className="print:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pl-6">{t('item_to_buy')}</TableHead>
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('total_quantity')}</TableHead>
-                      <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pr-6">{t('breakdown')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('item_to_buy')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('total_quantity')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8">{t('breakdown')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {purchaseReport.map((item, idx) => (
-                      <TableRow key={idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                        <TableCell className="font-semibold text-slate-900 py-6 pl-6">{item.name}</TableCell>
-                        <TableCell className="py-6">
-                          <span className="text-lg font-bold text-slate-900">{item.totalQty}</span>
-                          <span className="text-sm text-slate-400 ml-1.5">{item.unit}</span>
+                      <motion.tr 
+                        key={idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.03 }}
+                        className="border-slate-50 hover:bg-emerald-50/30 transition-colors"
+                      >
+                        <TableCell className="font-black text-slate-900 py-8 pl-8 text-lg tracking-tight">{item.name}</TableCell>
+                        <TableCell className="py-8">
+                          <span className="text-2xl font-black text-emerald-600 tracking-tighter">{item.totalQty}</span>
+                          <span className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">{item.unit}</span>
                         </TableCell>
-                        <TableCell className="py-6 pr-6">
+                        <TableCell className="py-8 pr-8">
                           <div className="flex flex-wrap gap-2">
                             {item.details.map((d: any, i: number) => (
-                              <span key={i} className="inline-flex items-center rounded-md bg-slate-50 border border-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                                <span className="font-semibold text-slate-900 mr-1.5">{d.restaurant}</span>
-                                <span className="text-slate-400">{d.quantity} {item.unit}</span>
+                              <span key={i} className="inline-flex items-center rounded-xl bg-white/80 border border-white/50 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">
+                                <span className="text-slate-900 mr-2 uppercase tracking-widest">{d.restaurant}</span>
+                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">{d.quantity} {item.unit}</span>
                               </span>
                             ))}
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     ))}
                     {purchaseReport.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={3} className="h-64 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="p-4 bg-slate-50 rounded-full mb-4">
-                              <ShoppingBag className="h-8 w-8 text-slate-300" />
+                            <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                              <ShoppingBag className="h-10 w-10 text-slate-300" />
                             </div>
-                            <p className="text-slate-900 font-medium">{t('no_items_to_purchase')}</p>
-                            <p className="text-slate-400 text-sm mt-1">No orders have been placed for this date yet.</p>
+                            <p className="text-slate-900 font-black tracking-tight">{t('no_items_to_purchase')}</p>
+                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">No orders have been placed for this date yet.</p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -996,8 +1058,8 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </motion.div>

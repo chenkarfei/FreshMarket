@@ -95,51 +95,51 @@ export default function UserManagement() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h3 className="text-xl font-semibold text-slate-900">{t('user_management')}</h3>
-          <p className="text-sm text-slate-500 mt-1">{t('manage_system_users_and_roles')}</p>
+          <h3 className="text-3xl font-black tracking-tight text-slate-900 mb-1">{t('user_management')}</h3>
+          <p className="text-slate-500 text-sm font-medium">{t('manage_system_users_and_roles')}</p>
         </div>
         
         <div className="flex gap-3">
           <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-            <DialogContent className="border-none shadow-2xl">
+            <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-slate-900">{t('view_details')}</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{t('view_details')}</DialogTitle>
               </DialogHeader>
               {selectedUserForDetails && (
-                <div className="space-y-6 mt-4">
+                <div className="space-y-6 mt-6">
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('name')}</Label>
-                      <p className="text-sm font-medium text-slate-900">{selectedUserForDetails.name}</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('name')}</Label>
+                      <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.name}</p>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('email')}</Label>
-                      <p className="text-sm font-medium text-slate-900">{selectedUserForDetails.email}</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('email')}</Label>
+                      <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.email}</p>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('role')}</Label>
-                      <p className="text-sm font-medium text-slate-900 capitalize">{selectedUserForDetails.role.replace('_', ' ')}</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('role')}</Label>
+                      <p className="text-sm font-bold text-slate-900 capitalize">{selectedUserForDetails.role.replace('_', ' ')}</p>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t('status')}</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('status')}</Label>
                       <div>
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${selectedUserForDetails.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${selectedUserForDetails.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                           {selectedUserForDetails.isActive ? t('active') : t('inactive')}
                         </span>
                       </div>
                     </div>
                   </div>
                   {selectedUserForDetails.role === 'restaurant' && (
-                    <div className="grid grid-cols-1 gap-6 pt-4 border-t border-slate-50">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Phone</Label>
-                        <p className="text-sm font-medium text-slate-900">{selectedUserForDetails.phone || 'N/A'}</p>
+                    <div className="grid grid-cols-1 gap-6 pt-6 border-t border-slate-100">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</Label>
+                        <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.phone || 'N/A'}</p>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Address</Label>
-                        <p className="text-sm font-medium text-slate-900">{selectedUserForDetails.address || 'N/A'}</p>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Address</Label>
+                        <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.address || 'N/A'}</p>
                       </div>
                     </div>
                   )}
@@ -149,58 +149,60 @@ export default function UserManagement() {
           </Dialog>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <Button 
-              onClick={() => {
-                setFormData({ name: '', email: '', password: '', role: 'restaurant', phone: '', address: '' });
-                setIsEditing(false);
-                setIsDialogOpen(true);
-              }}
-              className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 h-10"
-            >
-              {t('add_new_user')}
-            </Button>
-            <DialogContent className="border-none shadow-2xl">
+            <DialogTrigger render={
+              <Button 
+                onClick={() => {
+                  setFormData({ name: '', email: '', password: '', role: 'restaurant', phone: '', address: '' });
+                  setIsEditing(false);
+                  setIsDialogOpen(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+              >
+                {t('add_new_user')}
+              </Button>
+            } />
+            <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-slate-900">{isEditing ? t('edit_user') : t('add_new_user')}</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{isEditing ? t('edit_user') : t('add_new_user')}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+              <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('name')}</Label>
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('name')}</Label>
                   <Input 
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                     required 
-                    className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                    className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('email')}</Label>
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('email')}</Label>
                   <Input 
                     type="email" 
                     value={formData.email} 
                     onChange={e => setFormData({...formData, email: e.target.value})} 
                     required 
                     disabled={isEditing} 
-                    className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold disabled:bg-slate-50 disabled:text-slate-400"
                   />
                 </div>
                 {!isEditing && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('password_optional')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('password_optional')}</Label>
                     <Input 
                       type="password" 
                       value={formData.password} 
                       onChange={e => setFormData({...formData, password: e.target.value})} 
                       placeholder={t('leave_blank_google')} 
-                      className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('role')}</Label>
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('role')}</Label>
                   <Select value={formData.role} onValueChange={v => setFormData({...formData, role: v || 'restaurant'})}>
-                    <SelectTrigger className="rounded-lg border-slate-200 focus:ring-0 h-11"><SelectValue /></SelectTrigger>
-                    <SelectContent className="border-slate-100 shadow-xl">
+                    <SelectTrigger className="rounded-xl border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue /></SelectTrigger>
+                    <SelectContent className="border-slate-100 shadow-xl rounded-xl">
                       <SelectItem value="restaurant">{t('restaurant')}</SelectItem>
                       <SelectItem value="admin">{t('admin_driver')}</SelectItem>
                       <SelectItem value="super_admin">{t('super_admin')}</SelectItem>
@@ -208,26 +210,26 @@ export default function UserManagement() {
                   </Select>
                 </div>
                 {formData.role === 'restaurant' && (
-                  <div className="grid grid-cols-1 gap-4 pt-4 border-t border-slate-50">
+                  <div className="grid grid-cols-1 gap-4 pt-4 border-t border-slate-100">
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('phone')}</Label>
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('phone')}</Label>
                       <Input 
                         value={formData.phone} 
                         onChange={e => setFormData({...formData, phone: e.target.value})} 
-                        className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('address')}</Label>
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('address')}</Label>
                       <Input 
                         value={formData.address} 
                         onChange={e => setFormData({...formData, address: e.target.value})} 
-                        className="rounded-lg border-slate-200 focus:border-slate-900 focus:ring-0 h-11"
+                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                   </div>
                 )}
-                <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-11 transition-all" disabled={isSubmitting}>
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {t('save_user')}
                 </Button>
@@ -237,54 +239,60 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <Card className="border-slate-100 shadow-none overflow-hidden">
-        <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-          <CardTitle className="text-lg font-medium text-slate-900">{t('all_users')}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+        <div className="p-8 border-b border-slate-100 bg-white/50">
+          <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('all_users')}</h4>
+        </div>
+        <div className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pl-6">{t('name')}</TableHead>
-                <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('email')}</TableHead>
-                <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('role')}</TableHead>
-                <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4">{t('status')}</TableHead>
-                <TableHead className="text-slate-400 font-medium text-xs uppercase tracking-wider py-4 pr-6 text-right">{t('actions')}</TableHead>
+                <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('name')}</TableHead>
+                <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('email')}</TableHead>
+                <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('role')}</TableHead>
+                <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('status')}</TableHead>
+                <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8 text-right">{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map(u => (
-                <TableRow key={u.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                  <TableCell className="font-medium text-slate-900 py-4 pl-6">{u.name}</TableCell>
-                  <TableCell className="text-slate-600 py-4">{u.email}</TableCell>
-                  <TableCell className="capitalize text-slate-600 py-4">{u.role.replace('_', ' ')}</TableCell>
-                  <TableCell className="py-4">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${u.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+              {users.map((u, idx) => (
+                <motion.tr 
+                  key={u.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="border-slate-50 hover:bg-emerald-50/30 transition-colors group"
+                >
+                  <TableCell className="font-bold text-slate-900 py-6 pl-8">{u.name}</TableCell>
+                  <TableCell className="text-slate-600 py-6 font-medium">{u.email}</TableCell>
+                  <TableCell className="capitalize text-slate-600 py-6 font-medium">{u.role.replace('_', ' ')}</TableCell>
+                  <TableCell className="py-6">
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${u.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                       {u.isActive ? t('active') : t('inactive')}
                     </span>
                   </TableCell>
-                  <TableCell className="py-4 pr-6 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100" onClick={() => {
+                  <TableCell className="py-6 pr-8 text-right">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest" onClick={() => {
                         setSelectedUserForDetails(u);
                         setIsDetailsDialogOpen(true);
                       }}>{t('view_details')}</Button>
-                      <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100" onClick={() => {
+                      <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest" onClick={() => {
                         setFormData({ name: u.name, email: u.email, password: '', role: u.role, phone: u.phone || '', address: u.address || '' });
                         setIsEditing(true);
                         setIsDialogOpen(true);
                       }}>{t('edit')}</Button>
-                      <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => toggleStatus(u.id, u.isActive)}>
+                      <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl font-bold text-[11px] uppercase tracking-widest" onClick={() => toggleStatus(u.id, u.isActive)}>
                         {t('toggle_status')}
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }
