@@ -100,17 +100,16 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="inline-block mb-4"
           >
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[1.5rem] flex items-center justify-center shadow-lg shadow-emerald-500/20 mx-auto">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-none flex items-center justify-center shadow-lg shadow-emerald-500/20 mx-auto">
               <span className="text-white text-3xl font-black">F</span>
             </div>
           </motion.div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 font-outfit">
             Fresh<span className="text-emerald-600">Market</span>
           </h1>
-          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">{t('sign_in_to_continue')}</p>
         </div>
 
-        <div className="glass-card border border-white/50 shadow-2xl shadow-emerald-900/5 rounded-[2.5rem] overflow-hidden">
+        <div className="glass-card border border-white/50 shadow-2xl shadow-emerald-900/5 rounded-none overflow-hidden">
           <div className="p-10 flex flex-col gap-10">
             <form onSubmit={handleEmailLogin} className="space-y-6">
               <div className="space-y-2">
@@ -122,7 +121,7 @@ export default function LoginPage() {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   required 
-                  className="rounded-2xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-14 px-5 font-bold transition-all bg-white/50 backdrop-blur-sm"
+                  className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-14 px-5 font-bold transition-all bg-white/50 backdrop-blur-sm"
                 />
               </div>
               <div className="space-y-2">
@@ -133,10 +132,10 @@ export default function LoginPage() {
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   required 
-                  className="rounded-2xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-14 px-5 font-bold transition-all bg-white/50 backdrop-blur-sm"
+                  className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-14 px-5 font-bold transition-all bg-white/50 backdrop-blur-sm"
                 />
               </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-14 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
+              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] h-14 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : t('login')}
               </Button>
             </form>
@@ -153,7 +152,7 @@ export default function LoginPage() {
             <Button 
               onClick={handleGoogleLogin} 
               variant="outline" 
-              className="w-full border-slate-200 hover:bg-white hover:border-emerald-200 rounded-2xl h-14 font-black text-[11px] uppercase tracking-widest transition-all bg-white/50 backdrop-blur-sm" 
+              className="w-full border-slate-200 hover:bg-white hover:border-emerald-200 rounded-[1.5rem] h-14 font-black text-[11px] uppercase tracking-widest transition-all bg-white/50 backdrop-blur-sm" 
               type="button"
             >
               <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">

@@ -13,11 +13,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format, differenceInSeconds, startOfDay, addHours } from 'date-fns';
-import { ShoppingCart, Clock, CheckCircle2, AlertCircle, TrendingUp, Package, Loader2, Search, Filter, ChevronRight, History, Trash2, Plus, Minus, Info } from 'lucide-react';
+import { ShoppingCart, Clock, CheckCircle2, AlertCircle, TrendingUp, Package, Loader2, Search, Filter, ChevronRight, History, Trash2, Plus, Minus, Info, Printer } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion, AnimatePresence } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
@@ -158,6 +160,45 @@ export default function RestaurantDashboard() {
     }
   };
 
+  const handlePrintOrder = (order: any) => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text(`${t('order_details')} - ${userData?.name}`, 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`${t('order_date')}: ${format(new Date(order.orderDate), 'EEEE, MMM dd, yyyy')}`, 14, 30);
+    doc.text(`${t('status')}: ${t(order.status) || order.status}`, 14, 36);
+    doc.text(`${t('generated_on')}: ${format(new Date(), 'PPpp')}`, 14, 42);
+
+    const tableData = order.items.map((item: any) => [
+      item.name,
+      `${item.quantity} ${item.unit}`,
+      `RM ${(item.priceRangeMin * item.quantity).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [[t('item'), t('quantity'), t('price')]],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129] }, // Emerald-500
+      styles: { fontSize: 10, cellPadding: 4 },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+        2: { halign: 'right' }
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 50;
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text(`${t('total')}: RM ${order.totalMin.toFixed(2)}`, 14, finalY + 15);
+
+    doc.save(`Order_${order.orderDate}_${userData?.name}.pdf`);
+  };
+
   if (userData?.role !== 'restaurant') return <div>Unauthorized</div>;
 
   const cartTotalMin = cart.reduce((acc, item) => acc + (item.priceRangeMin * item.quantity), 0);
@@ -176,19 +217,19 @@ export default function RestaurantDashboard() {
       transition={{ duration: 0.5 }}
       className="space-y-10 relative pb-20"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 px-2 py-0 text-[10px] uppercase tracking-widest font-bold">Restaurant Partner</Badge>
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 px-2 py-0 text-[10px] uppercase tracking-widest font-bold rounded-none">Restaurant Partner</Badge>
           </div>
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 mb-1">
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-1">
             {t('welcome')}, <span className="text-gradient">{userData.name}</span>
           </h2>
           <p className="text-slate-500 text-sm font-medium">Manage your daily market orders and inventory with ease.</p>
         </div>
         <motion.div 
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-amber-50/80 backdrop-blur-sm border border-amber-100 text-[11px] font-bold uppercase tracking-wider text-amber-700 shadow-sm shadow-amber-100/20"
+          className="flex items-center justify-center lg:justify-start gap-3 px-6 py-3 rounded-none bg-amber-50/80 backdrop-blur-sm border border-amber-100 text-[11px] font-bold uppercase tracking-wider text-amber-700 shadow-sm shadow-amber-100/20 w-full sm:w-auto"
         >
           <Clock className="h-4 w-4 text-amber-500" />
           <span>{t('cutoff_in')} <span className="text-amber-900 font-black ml-1">{timeLeft}</span></span>
@@ -202,11 +243,11 @@ export default function RestaurantDashboard() {
               <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('tonights_order_status')}</h3>
               {currentOrder && <span className="text-[10px] text-slate-400 font-medium">ID: {currentOrder.id.split('_').pop()}</span>}
             </div>
-            <Card className="glass-card border-none rounded-[2.5rem] overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500">
+            <Card className="glass-card border-none rounded-none overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500">
               <CardContent className="p-10">
               {currentOrder ? (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-105 duration-500 ${
+                  <div className={`flex h-16 w-16 items-center justify-center rounded-none shadow-inner transition-transform group-hover:scale-105 duration-500 ${
                     currentOrder.status === 'acknowledged' ? 'bg-emerald-100 text-emerald-600' : 
                     currentOrder.status === 'submitted' ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'
                   }`}>
@@ -241,7 +282,7 @@ export default function RestaurantDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center gap-6 text-slate-400">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 border-dashed">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-none bg-slate-50 border border-slate-100 border-dashed">
                     <ShoppingCart className="h-8 w-8 text-slate-300" />
                   </div>
                   <div>
@@ -258,14 +299,20 @@ export default function RestaurantDashboard() {
         <div>
           <div className="space-y-4">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 px-1">{t('estimated_total')}</h3>
-            <Card className="bg-slate-900 border-none shadow-2xl shadow-emerald-900/20 rounded-[2.5rem] overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-30 transition-all duration-700 group-hover:rotate-12 group-hover:scale-110">
-                <TrendingUp className="h-32 w-32 text-white" />
-              </div>
+            <Card className="bg-slate-900 border-none shadow-2xl shadow-emerald-900/20 rounded-none overflow-hidden relative group transition-all duration-700 hover:shadow-emerald-500/30 hover:scale-[1.01]">
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-tr from-emerald-500/0 via-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              />
+              <motion.div 
+                initial={{ x: '-150%', skewX: -20 }}
+                whileHover={{ x: '150%', skewX: -20 }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className="absolute inset-0 w-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent z-0"
+              />
               <CardContent className="p-10 relative z-10">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest">Estimated Total RM</span>
-                  <div className="text-6xl font-black tracking-tighter text-white">
+                  <span className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest group-hover:text-emerald-400 transition-colors duration-500">Estimated Total RM</span>
+                  <div className="text-6xl font-black tracking-tighter text-white group-hover:text-emerald-50 transition-colors duration-500">
                     {cartTotalMin.toFixed(2)}
                   </div>
                   <div className="flex items-center gap-2 pt-3">
@@ -279,7 +326,7 @@ export default function RestaurantDashboard() {
                   <Button 
                     onClick={() => saveOrder('submitted')} 
                     disabled={!canEdit || cart.length === 0 || isSubmitting} 
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-white rounded-2xl h-16 font-bold text-base shadow-xl shadow-emerald-500/20 transition-all active:scale-95 border-none"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-white rounded-[1.5rem] h-16 font-bold text-base shadow-xl shadow-emerald-500/20 transition-all active:scale-95 border-none"
                   >
                     {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                     {t('submit_order')}
@@ -288,7 +335,7 @@ export default function RestaurantDashboard() {
                     onClick={() => saveOrder('draft')} 
                     disabled={!canEdit || cart.length === 0 || isSubmitting} 
                     variant="ghost" 
-                    className="w-full text-slate-500 hover:text-white hover:bg-white/5 rounded-2xl h-12 font-bold text-xs uppercase tracking-widest transition-all"
+                    className="w-full text-slate-500 hover:text-white hover:bg-white/5 rounded-[1.5rem] h-12 font-bold text-xs uppercase tracking-widest transition-all"
                   >
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_draft')}
@@ -301,11 +348,11 @@ export default function RestaurantDashboard() {
       </div>
 
       <Tabs defaultValue="browse" className="w-full">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <TabsList className="flex w-full md:w-auto justify-start bg-slate-200/40 backdrop-blur-md p-1.5 rounded-[1.5rem] gap-1 h-auto border border-white/50 shadow-inner">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 px-1 sm:px-0">
+          <TabsList className="flex w-full lg:w-auto justify-start bg-slate-100/30 backdrop-blur-md p-1.5 rounded-none gap-2 h-auto border border-white/50 shadow-inner overflow-x-auto no-scrollbar px-2 sm:px-1.5">
             <TabsTrigger 
               value="browse" 
-              className="rounded-xl px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+              className="rounded-none px-3 sm:px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500 shrink-0"
             >
               <div className="flex items-center gap-2.5">
                 <Search className="h-4 w-4" />
@@ -314,13 +361,13 @@ export default function RestaurantDashboard() {
             </TabsTrigger>
             <TabsTrigger 
               value="cart" 
-              className="rounded-xl px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500 relative"
+              className="rounded-none px-3 sm:px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500 relative shrink-0"
             >
               <div className="flex items-center gap-2.5">
                 <ShoppingCart className="h-4 w-4" />
                 {t('my_cart')}
                 {cart.length > 0 && (
-                  <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white shadow-lg shadow-emerald-500/30">
+                  <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-none bg-emerald-500 text-[10px] font-black text-white shadow-lg shadow-emerald-500/30">
                     {cart.length}
                   </span>
                 )}
@@ -328,7 +375,7 @@ export default function RestaurantDashboard() {
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="rounded-xl px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+              className="rounded-none px-3 sm:px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500 shrink-0"
             >
               <div className="flex items-center gap-2.5">
                 <History className="h-4 w-4" />
@@ -337,24 +384,24 @@ export default function RestaurantDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-3 pb-4 md:pb-0">
-            <div className="relative group">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <div className="relative group w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
               <Input 
                 placeholder={t('search_items')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 w-full md:w-64 pl-10 rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white focus:border-emerald-200 focus:ring-emerald-50 transition-all text-sm"
+                className="h-10 w-full pl-10 rounded-none border-slate-100 bg-slate-50/50 focus:bg-white focus:border-emerald-200 focus:ring-emerald-50 transition-all text-sm"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={(value: string | null) => setSelectedCategory(value ?? "")}>
-              <SelectTrigger className="h-10 w-40 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600">
+            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || 'all')}>
+              <SelectTrigger className="h-10 w-full sm:w-40 rounded-none border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600">
                 <div className="flex items-center gap-2">
                   <Filter className="h-3.5 w-3.5" />
                   <SelectValue placeholder="All Categories" />
                 </div>
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+              <SelectContent className="rounded-none border-slate-100 shadow-xl">
                 <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider py-3">All Categories</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold uppercase tracking-wider py-3">{cat.name}</SelectItem>
@@ -375,16 +422,16 @@ export default function RestaurantDashboard() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2, delay: idx * 0.05 }}
-                  className="group relative flex flex-col justify-between p-8 rounded-[2.5rem] border border-white/50 bg-white/80 backdrop-blur-md hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500"
+                  className="group relative flex flex-col justify-between p-8 rounded-none border border-white/50 bg-white/80 backdrop-blur-md hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="bg-emerald-50/50 text-emerald-600 border-none px-3 py-0.5 text-[9px] uppercase tracking-widest font-black group-hover:bg-emerald-100 transition-colors">
+                      <Badge variant="secondary" className="bg-emerald-50/50 text-emerald-600 border-none px-3 py-0.5 text-[9px] uppercase tracking-widest font-black group-hover:bg-emerald-100 transition-colors rounded-none">
                         {categories.find(c => c.id === item.categoryId)?.name}
                       </Badge>
                       {cart.find(i => i.itemId === item.id) && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30">
+                          <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30 rounded-none">
                             {cart.find(i => i.itemId === item.id)?.quantity} IN CART
                           </Badge>
                         </motion.div>
@@ -396,7 +443,7 @@ export default function RestaurantDashboard() {
                       <span className="text-2xl font-black text-slate-900 tracking-tighter">{item.priceRangeMin.toFixed(2)}</span>
                       <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">/ {item.unit}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold bg-slate-100/50 p-3 rounded-2xl border border-white/50">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold bg-slate-100/50 p-3 rounded-none border border-white/50">
                       <Info className="h-3.5 w-3.5 text-emerald-500" />
                       Market Max: RM {item.priceRangeMax.toFixed(2)}
                     </div>
@@ -405,7 +452,7 @@ export default function RestaurantDashboard() {
                     <Button 
                       onClick={() => addToCart(item)} 
                       disabled={!canEdit} 
-                      className="w-full bg-slate-900 hover:bg-emerald-500 text-white border-none shadow-xl shadow-slate-900/10 hover:shadow-emerald-500/20 rounded-2xl h-14 font-black text-[11px] uppercase tracking-widest transition-all duration-500 active:scale-95"
+                      className="w-full bg-slate-900 hover:bg-emerald-500 text-white border-none shadow-xl shadow-slate-900/10 hover:shadow-emerald-500/20 rounded-[1.5rem] h-14 font-black text-[11px] uppercase tracking-widest transition-all duration-500 active:scale-95"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       {t('add_to_cart')}
@@ -417,7 +464,7 @@ export default function RestaurantDashboard() {
             
             {filteredItems.length === 0 && (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
-                <div className="h-20 w-20 rounded-[2.5rem] bg-slate-50 flex items-center justify-center mb-6">
+                <div className="h-20 w-20 rounded-none bg-slate-50 flex items-center justify-center mb-6">
                   <Search className="h-10 w-10 text-slate-200" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No items found</h3>
@@ -443,10 +490,10 @@ export default function RestaurantDashboard() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     key={item.itemId} 
-                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-[2rem] border border-slate-100 bg-white hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
+                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-none border border-slate-100 bg-white hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
                   >
                     <div className="flex items-center gap-5">
-                      <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
+                      <div className="h-14 w-14 rounded-none bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
                         <Package className="h-7 w-7" />
                       </div>
                       <div>
@@ -458,11 +505,11 @@ export default function RestaurantDashboard() {
                     </div>
                     
                     <div className="flex items-center justify-between sm:justify-end gap-10 mt-6 sm:mt-0">
-                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-none border border-slate-100">
                         <button 
                           onClick={() => updateQuantity(item.itemId, item.quantity - 1)} 
                           disabled={!canEdit} 
-                          className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          className="h-10 w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -470,7 +517,7 @@ export default function RestaurantDashboard() {
                         <button 
                           onClick={() => updateQuantity(item.itemId, item.quantity + 1)} 
                           disabled={!canEdit} 
-                          className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          className="h-10 w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -496,8 +543,8 @@ export default function RestaurantDashboard() {
                 ))}
 
                 {cart.length === 0 && (
-                  <div className="py-32 flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
-                    <div className="h-24 w-24 rounded-[3rem] bg-white shadow-sm flex items-center justify-center mb-6">
+                  <div className="py-32 flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-none border border-dashed border-slate-200">
+                    <div className="h-24 w-24 rounded-none bg-white shadow-sm flex items-center justify-center mb-6">
                       <ShoppingCart className="h-12 w-12 text-slate-200" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{t('cart_is_empty')}</h3>
@@ -509,7 +556,7 @@ export default function RestaurantDashboard() {
 
             <div className="space-y-6">
               <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 px-1">Order Summary</h3>
-              <Card className="border-slate-100 shadow-xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden sticky top-8">
+              <Card className="border-slate-100 shadow-xl shadow-slate-200/50 rounded-none overflow-hidden sticky top-8">
                 <CardContent className="p-8">
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
@@ -528,14 +575,14 @@ export default function RestaurantDashboard() {
                           {cartTotalMin.toFixed(2)}
                         </div>
                       </div>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px]">FREE DELIVERY</Badge>
+                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] rounded-none">FREE DELIVERY</Badge>
                     </div>
                     
                     <div className="pt-6 space-y-3">
                       <Button 
                         onClick={() => saveOrder('submitted')} 
                         disabled={!canEdit || cart.length === 0 || isSubmitting} 
-                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl h-16 font-bold text-base shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white rounded-[1.5rem] h-16 font-bold text-base shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
                       >
                         {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                         {t('submit_order')}
@@ -562,13 +609,13 @@ export default function RestaurantDashboard() {
               <motion.div 
                 whileHover={{ y: -5 }}
                 key={order.id} 
-                className="group p-8 rounded-[2.5rem] border border-slate-100 bg-white hover:border-emerald-100 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-500"
+                className="group p-8 rounded-none border border-slate-100 bg-white hover:border-emerald-100 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-500"
               >
                 <div className="flex justify-between items-start mb-6">
-                  <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
+                  <div className="h-14 w-14 rounded-none bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
                     <History className="h-7 w-7" />
                   </div>
-                  <Badge className={`border-none font-black text-[10px] px-3 py-1 rounded-full ${
+                  <Badge className={`border-none font-black text-[10px] px-3 py-1 rounded-none ${
                     order.status === 'acknowledged' ? 'bg-emerald-50 text-emerald-600' : 
                     order.status === 'submitted' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'
                   }`}>
@@ -588,15 +635,24 @@ export default function RestaurantDashboard() {
                   </div>
                   <Dialog>
                     <DialogTrigger render={
-                      <Button variant="ghost" size="sm" className="rounded-xl text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-bold text-xs">
+                      <Button variant="ghost" size="sm" className="rounded-[1rem] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-bold text-xs">
                         Details <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     } />
-                    <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl rounded-[2rem]">
-                      <DialogHeader>
+                    <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl rounded-none">
+                      <DialogHeader className="flex flex-row items-center justify-between space-y-0 pr-6">
                         <DialogTitle className="text-2xl font-black text-slate-900">
                           {t('order_details')} - {format(new Date(order.orderDate), 'EEEE, MMM dd')}
                         </DialogTitle>
+                        <Button 
+                          onClick={() => handlePrintOrder(order)} 
+                          variant="outline" 
+                          size="sm" 
+                          className="rounded-none border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 font-black text-[10px] uppercase tracking-widest h-10 px-4 flex items-center gap-2"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                          {t('print')}
+                        </Button>
                       </DialogHeader>
                       <div className="overflow-y-auto flex-1 pr-2 mt-6">
                         <Table>
@@ -626,7 +682,7 @@ export default function RestaurantDashboard() {
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Estimated Price</p>
                           <p className="text-3xl font-black text-slate-900 tracking-tighter">RM {order.totalMin.toFixed(2)}</p>
                         </div>
-                        <Badge className={`border-none font-black text-xs px-4 py-2 rounded-xl ${
+                        <Badge className={`border-none font-black text-xs px-4 py-2 rounded-none ${
                           order.status === 'acknowledged' ? 'bg-emerald-50 text-emerald-600' : 
                           order.status === 'submitted' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'
                         }`}>
@@ -640,8 +696,8 @@ export default function RestaurantDashboard() {
             ))}
 
             {history.length === 0 && (
-              <div className="col-span-full py-32 flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
-                <div className="h-24 w-24 rounded-[3rem] bg-white shadow-sm flex items-center justify-center mb-6">
+              <div className="col-span-full py-32 flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-none border border-dashed border-slate-200">
+                <div className="h-24 w-24 rounded-none bg-white shadow-sm flex items-center justify-center mb-6">
                   <Package className="h-12 w-12 text-slate-200" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{t('no_past_orders')}</h3>

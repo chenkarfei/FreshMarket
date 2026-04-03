@@ -11,7 +11,7 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={
-        <Button variant="ghost" size="sm" className="h-10 px-4 rounded-2xl text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 bg-white/50 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300">
+        <Button variant="ghost" size="sm" className="h-10 px-4 rounded-[1.5rem] text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 bg-white/50 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300">
           <Globe className="h-4 w-4 mr-2" />
           <span className="text-[10px] font-black uppercase tracking-widest">{language === 'en' ? 'EN' : 'ZH'}</span>
         </Button>

@@ -71,7 +71,7 @@
     --chart-3: #3b82f6;
     --chart-4: #8b5cf6;
     --chart-5: #ec4899;
-    --radius: 1rem;
+    --radius: 0;
     --sidebar: #ffffff;
     --sidebar-foreground: #0f172a;
     --sidebar-primary: #10b981;
@@ -146,5 +146,12 @@
   }
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-amber-500;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

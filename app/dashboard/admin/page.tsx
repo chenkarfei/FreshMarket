@@ -66,8 +66,10 @@ function SortableCategoryRow({ category, onEdit, t }: { category: any, onEdit: (
           <GripVertical className="h-4 w-4" />
         </div>
       </TableCell>
-      <TableCell className="font-medium">{category.name}</TableCell>
-      <TableCell>{category.order}</TableCell>
+      <TableCell className="py-4">
+        <span className="font-bold text-slate-900">{category.name}</span>
+      </TableCell>
+      <TableCell className="font-medium text-slate-600">{category.order}</TableCell>
       <TableCell>
         <Button variant="outline" size="sm" onClick={() => onEdit(category)}>{t('edit')}</Button>
       </TableCell>
@@ -401,7 +403,7 @@ export default function AdminDashboard() {
         </div>
         <motion.div 
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-white/50 shadow-sm"
+          className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-none border border-white/50 shadow-sm"
         >
           <Label htmlFor="date-picker" className="whitespace-nowrap text-[10px] font-black text-slate-400 px-2 uppercase tracking-widest">{t('select_date')}</Label>
           <Input 
@@ -416,10 +418,10 @@ export default function AdminDashboard() {
 
       <div className="grid gap-6 md:grid-cols-3 mb-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
+          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
-              <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
+              <div className="p-3 bg-emerald-50 rounded-full text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
                 <ShoppingBag className="h-5 w-5" />
               </div>
             </div>
@@ -432,10 +434,10 @@ export default function AdminDashboard() {
         </motion.div>
         
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
+          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Est. Revenue</span>
-              <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-2xl text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-sm text-[11px] font-black">
+              <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-full text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-sm text-[11px] font-black">
                 RM
               </div>
             </div>
@@ -448,10 +450,10 @@ export default function AdminDashboard() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="glass-card rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
+          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Restaurants</span>
-              <div className="p-3 bg-amber-50 rounded-2xl text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-sm">
+              <div className="p-3 bg-amber-50 rounded-full text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-sm">
                 <Users className="h-5 w-5" />
               </div>
             </div>
@@ -462,11 +464,11 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue={userData?.role === 'super_admin' ? 'users' : 'orders'} className="w-full">
-        <TabsList className="mb-10 flex w-full justify-start overflow-x-auto bg-slate-200/40 backdrop-blur-md p-1.5 rounded-[1.5rem] gap-1 h-auto border border-white/50 shadow-inner">
+        <TabsList className="mb-10 flex w-full justify-start overflow-x-auto bg-slate-200/40 backdrop-blur-md p-1.5 rounded-none gap-1 h-auto border border-white/50 shadow-inner">
           {userData?.role === 'super_admin' && (
             <TabsTrigger 
               value="users" 
-              className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+              className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
             >
               <div className="flex items-center gap-2.5">
                 <Users className="h-4 w-4" />
@@ -476,7 +478,7 @@ export default function AdminDashboard() {
           )}
           <TabsTrigger 
             value="orders"
-            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
             <div className="flex items-center gap-2.5">
               <ShoppingBag className="h-4 w-4" />
@@ -485,7 +487,7 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger 
             value="categories"
-            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
             <div className="flex items-center gap-2.5">
               <Filter className="h-4 w-4" />
@@ -494,7 +496,7 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger 
             value="items"
-            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
             <div className="flex items-center gap-2.5">
               <Package className="h-4 w-4" />
@@ -503,7 +505,7 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger 
             value="report"
-            className="rounded-xl px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
           >
             <div className="flex items-center gap-2.5">
               <TrendingUp className="h-4 w-4" />
@@ -519,7 +521,7 @@ export default function AdminDashboard() {
         )}
         
         <TabsContent value="orders" className="space-y-6">
-          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+          <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('orders_for')} {format(new Date(selectedDate), 'dd MMM yyyy')}</h4>
@@ -527,7 +529,7 @@ export default function AdminDashboard() {
                   <Button 
                     onClick={bulkAcknowledge} 
                     disabled={isBulkAcknowledgeLoading}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 h-10 text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-6 h-10 text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
                   >
                     {isBulkAcknowledgeLoading ? (
                       <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -561,7 +563,7 @@ export default function AdminDashboard() {
                     >
                       <TableCell className="font-bold text-slate-900 py-6 pl-8">{order.restaurantName}</TableCell>
                       <TableCell className="py-6">
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                        <span className={`inline-flex items-center rounded-none px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                           order.status === 'acknowledged' ? 'bg-emerald-50 text-emerald-600' : 
                           order.status === 'submitted' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'
                         }`}>
@@ -575,8 +577,8 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
                         <Dialog>
-                          <DialogTrigger render={<Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest">{t('view_details')}</Button>} />
-                          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl glass-card rounded-[2rem]">
+                          <DialogTrigger render={<Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest">{t('view_details')}</Button>} />
+                          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl glass-card rounded-none">
                             <DialogHeader>
                               <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{t('order_details')}: {order.restaurantName}</DialogTitle>
                             </DialogHeader>
@@ -592,7 +594,9 @@ export default function AdminDashboard() {
                                 <TableBody>
                                   {order.items.map((item: any, idx: number) => (
                                     <TableRow key={idx} className="border-slate-50">
-                                      <TableCell className="text-slate-900 font-bold py-4">{item.name}</TableCell>
+                                      <TableCell className="py-4">
+                                        <span className="text-slate-900 font-bold">{item.name}</span>
+                                      </TableCell>
                                       <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {item.unit}</TableCell>
                                       <TableCell className="text-slate-600 text-right font-medium py-4">
                                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
@@ -605,7 +609,7 @@ export default function AdminDashboard() {
                             </div>
                             {order.status === 'submitted' && (
                               <div className="mt-8 pt-6 border-t border-slate-100">
-                                <Button onClick={() => acknowledgeOrder(order.id)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300">
+                                <Button onClick={() => acknowledgeOrder(order.id)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1rem] h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300">
                                   {t('acknowledge_order')}
                                 </Button>
                               </div>
@@ -619,7 +623,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableCell colSpan={5} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                          <div className="p-6 bg-slate-50 rounded-none mb-4">
                             <ShoppingBag className="h-10 w-10 text-slate-300" />
                           </div>
                           <p className="text-slate-900 font-black tracking-tight">{t('no_orders_tonight')}</p>
@@ -643,12 +647,12 @@ export default function AdminDashboard() {
                     setCategoryForm({ id: '', name: '', order: categories.length + 1 });
                     setIsCategoryDialogOpen(true);
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
                 >
                   {t('add_new_category')}
                 </Button>
               } />
-              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{categoryForm.id ? t('edit_category') : t('add_new_category')}</DialogTitle>
                 </DialogHeader>
@@ -659,7 +663,7 @@ export default function AdminDashboard() {
                       value={categoryForm.name} 
                       onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} 
                       required 
-                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
                   <div className="space-y-2">
@@ -669,10 +673,10 @@ export default function AdminDashboard() {
                       value={categoryForm.order} 
                       onChange={e => setCategoryForm({...categoryForm, order: e.target.value === '' ? '' : parseInt(e.target.value)})} 
                       required 
-                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1rem] h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_category')}
                   </Button>
@@ -680,7 +684,7 @@ export default function AdminDashboard() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+          <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_categories')}</h4>
             </div>
@@ -720,7 +724,7 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableCell colSpan={4} className="h-64 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                            <div className="p-6 bg-slate-50 rounded-none mb-4">
                               <Package className="h-10 w-10 text-slate-300" />
                             </div>
                             <p className="text-slate-900 font-black tracking-tight">{t('no_categories_found')}</p>
@@ -744,7 +748,7 @@ export default function AdminDashboard() {
                   placeholder={t('search_items')}
                   value={itemSearchQuery}
                   onChange={(e) => setItemSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 pl-12 font-bold bg-white/50 backdrop-blur-sm"
+                  className="w-full rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 pl-12 font-bold bg-white/50 backdrop-blur-sm"
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                   <Search className="h-5 w-5 text-slate-400" />
@@ -753,18 +757,18 @@ export default function AdminDashboard() {
               {selectedItems.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger render={
-                    <Button variant="outline" className="rounded-2xl border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 h-12 px-6 font-bold flex items-center gap-2 shadow-sm">
-                      {t('bulk_actions')} <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black">{selectedItems.length}</span>
+                    <Button variant="outline" className="rounded-[1.5rem] border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 h-12 px-6 font-bold flex items-center gap-2 shadow-sm">
+                      {t('bulk_actions')} <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-none text-[10px] font-black">{selectedItems.length}</span>
                     </Button>
                   } />
-                  <DropdownMenuContent className="border-none shadow-2xl glass-card rounded-2xl p-2 min-w-[200px]">
-                    <DropdownMenuItem onClick={() => handleBulkActivate(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors">
+                  <DropdownMenuContent className="border-none shadow-2xl glass-card rounded-none p-2 min-w-[200px]">
+                    <DropdownMenuItem onClick={() => handleBulkActivate(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-none hover:bg-emerald-50 hover:text-emerald-600 transition-colors">
                       {t('activate_selected')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkActivate(false)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                    <DropdownMenuItem onClick={() => handleBulkActivate(false)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-none hover:bg-rose-50 hover:text-rose-600 transition-colors">
                       {t('deactivate_selected')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsBulkCategoryDialogOpen(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <DropdownMenuItem onClick={() => setIsBulkCategoryDialogOpen(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-none hover:bg-blue-50 hover:text-blue-600 transition-colors">
                       {t('change_category')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -778,12 +782,12 @@ export default function AdminDashboard() {
                     setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
                     setIsItemDialogOpen(true);
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
                 >
                   {t('add_new_item')}
                 </Button>
               } />
-              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{itemForm.id ? t('edit_item') : t('add_new_item')}</DialogTitle>
                 </DialogHeader>
@@ -791,8 +795,8 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category')}</Label>
                     <Select value={itemForm.categoryId} onValueChange={v => setItemForm({...itemForm, categoryId: v || ''})}>
-                      <SelectTrigger className="rounded-xl border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
-                      <SelectContent className="border-slate-100 shadow-xl rounded-xl">
+                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectContent className="border-slate-100 shadow-xl rounded-none">
                         {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -803,7 +807,7 @@ export default function AdminDashboard() {
                       value={itemForm.name} 
                       onChange={e => setItemForm({...itemForm, name: e.target.value})} 
                       required 
-                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -815,7 +819,7 @@ export default function AdminDashboard() {
                         value={itemForm.priceRangeMin} 
                         onChange={e => setItemForm({...itemForm, priceRangeMin: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
                         required 
-                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                        className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                     <div className="space-y-2">
@@ -826,7 +830,7 @@ export default function AdminDashboard() {
                         value={itemForm.priceRangeMax} 
                         onChange={e => setItemForm({...itemForm, priceRangeMax: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
                         required 
-                        className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                        className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                       />
                     </div>
                   </div>
@@ -836,10 +840,10 @@ export default function AdminDashboard() {
                       value={itemForm.unit} 
                       onChange={e => setItemForm({...itemForm, unit: e.target.value})} 
                       required 
-                      className="rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
+                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1rem] h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_item')}
                   </Button>
@@ -848,7 +852,7 @@ export default function AdminDashboard() {
             </Dialog>
 
             <Dialog open={isBulkCategoryDialogOpen} onOpenChange={setIsBulkCategoryDialogOpen}>
-              <DialogContent className="border-none shadow-2xl glass-card rounded-[2rem] max-w-md">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{t('change_category_for')} {selectedItems.length} {t('items')}</DialogTitle>
                 </DialogHeader>
@@ -856,13 +860,13 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('new_category')}</Label>
                     <Select value={bulkCategoryForm.categoryId} onValueChange={v => setBulkCategoryForm({ categoryId: v || '' })}>
-                      <SelectTrigger className="rounded-xl border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
-                      <SelectContent className="border-slate-100 shadow-xl rounded-xl">
+                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectContent className="border-slate-100 shadow-xl rounded-none">
                         {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={!bulkCategoryForm.categoryId || isSubmitting}>
+                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1rem] h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={!bulkCategoryForm.categoryId || isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('update_category')}
                   </Button>
@@ -870,7 +874,7 @@ export default function AdminDashboard() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+          <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_items')}</h4>
             </div>
@@ -883,7 +887,7 @@ export default function AdminDashboard() {
                         checked={items.length > 0 && selectedItems.length === items.length}
                         onCheckedChange={toggleAllItems}
                         aria-label="Select all items"
-                        className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-md"
+                        className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-none"
                       />
                     </TableHead>
                     <TableHead 
@@ -948,10 +952,12 @@ export default function AdminDashboard() {
                           checked={selectedItems.includes(item.id)}
                           onCheckedChange={() => toggleItemSelection(item.id)}
                           aria-label={`Select ${item.name}`}
-                          className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-md"
+                          className="border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 rounded-none"
                         />
                       </TableCell>
-                      <TableCell className="font-bold text-slate-900 py-6">{item.name}</TableCell>
+                      <TableCell className="py-6">
+                        <span className="font-bold text-slate-900">{item.name}</span>
+                      </TableCell>
                       <TableCell className="text-slate-600 py-6 font-medium">{categories.find(c => c.id === item.categoryId)?.name || 'Unknown'}</TableCell>
                       <TableCell className="text-slate-600 py-6 font-medium">
                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
@@ -963,15 +969,15 @@ export default function AdminDashboard() {
                           variant={item.isActive !== false ? "outline" : "secondary"} 
                           className={
                             item.isActive !== false 
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full" 
-                            : "bg-slate-100 text-slate-500 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none" 
+                            : "bg-slate-100 text-slate-500 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none"
                           }
                         >
                           {item.isActive !== false ? t('active') : t('inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
-                        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-[11px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300" onClick={() => {
+                        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest transition-opacity duration-300" onClick={() => {
                           setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit });
                           setIsItemDialogOpen(true);
                         }}>{t('edit')}</Button>
@@ -982,7 +988,7 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableCell colSpan={7} className="h-64 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                          <div className="p-6 bg-slate-50 rounded-none mb-4">
                             <Package className="h-10 w-10 text-slate-300" />
                           </div>
                           <p className="text-slate-900 font-black tracking-tight">{items.length === 0 ? t('no_items_found') : t('no_items_match')}</p>
@@ -998,10 +1004,10 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="report" className="space-y-6">
-          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/50 shadow-xl">
+          <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50 flex flex-col sm:flex-row items-center justify-between gap-4">
               <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('consolidated_purchase_list')} ({format(new Date(selectedDate), 'dd MMM yyyy')})</h4>
-              <Button onClick={handlePrintList} variant="outline" className="rounded-2xl border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 h-12 px-8 font-black text-[11px] uppercase tracking-widest transition-all shadow-sm flex items-center gap-2">
+              <Button onClick={handlePrintList} variant="outline" className="rounded-[1.5rem] border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 h-12 px-8 font-black text-[11px] uppercase tracking-widest transition-all shadow-sm flex items-center gap-2">
                 <Printer className="h-4 w-4" />
                 {t('print_list')}
               </Button>
@@ -1033,9 +1039,9 @@ export default function AdminDashboard() {
                         <TableCell className="py-8 pr-8">
                           <div className="flex flex-wrap gap-2">
                             {item.details.map((d: any, i: number) => (
-                              <span key={i} className="inline-flex items-center rounded-xl bg-white/80 border border-white/50 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">
+                              <span key={i} className="inline-flex items-center rounded-none bg-white/80 border border-white/50 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">
                                 <span className="text-slate-900 mr-2 uppercase tracking-widest">{d.restaurant}</span>
-                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">{d.quantity} {item.unit}</span>
+                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-none">{d.quantity} {item.unit}</span>
                               </span>
                             ))}
                           </div>
@@ -1046,7 +1052,7 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableCell colSpan={3} className="h-64 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="p-6 bg-slate-50 rounded-[2rem] mb-4">
+                            <div className="p-6 bg-slate-50 rounded-none mb-4">
                               <ShoppingBag className="h-10 w-10 text-slate-300" />
                             </div>
                             <p className="text-slate-900 font-black tracking-tight">{t('no_items_to_purchase')}</p>
