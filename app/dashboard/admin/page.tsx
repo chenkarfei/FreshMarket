@@ -464,55 +464,57 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue={userData?.role === 'super_admin' ? 'users' : 'orders'} className="w-full">
-        <TabsList className="mb-10 flex w-full justify-start overflow-x-auto bg-slate-200/40 backdrop-blur-md p-1.5 rounded-none gap-1 h-auto border border-white/50 shadow-inner">
-          {userData?.role === 'super_admin' && (
+        <div className="px-1 sm:px-0 mb-10">
+          <TabsList className="flex w-full justify-start overflow-x-auto no-scrollbar bg-slate-50/50 backdrop-blur-md p-1 rounded-none gap-3 h-auto border border-slate-100 shadow-sm px-2 sm:px-1.5">
+            {userData?.role === 'super_admin' && (
+              <TabsTrigger 
+                value="users" 
+                className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5" />
+                  {t('users')}
+                </div>
+              </TabsTrigger>
+            )}
             <TabsTrigger 
-              value="users" 
-              className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
+              value="orders"
+              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
             >
-              <div className="flex items-center gap-2.5">
-                <Users className="h-4 w-4" />
-                {t('users')}
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                {t('tonights_orders')}
               </div>
             </TabsTrigger>
-          )}
-          <TabsTrigger 
-            value="orders"
-            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
-          >
-            <div className="flex items-center gap-2.5">
-              <ShoppingBag className="h-4 w-4" />
-              {t('tonights_orders')}
-            </div>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="categories"
-            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
-          >
-            <div className="flex items-center gap-2.5">
-              <Filter className="h-4 w-4" />
-              {t('manage_categories')}
-            </div>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="items"
-            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
-          >
-            <div className="flex items-center gap-2.5">
-              <Package className="h-4 w-4" />
-              {t('manage_items')}
-            </div>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="report"
-            className="rounded-none px-8 py-3 text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/10 transition-all duration-500"
-          >
-            <div className="flex items-center gap-2.5">
-              <TrendingUp className="h-4 w-4" />
-              {t('purchase_report')}
-            </div>
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger 
+              value="categories"
+              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="h-3.5 w-3.5" />
+                {t('manage_categories')}
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="items"
+              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Package className="h-3.5 w-3.5" />
+                {t('manage_items')}
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="report"
+              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5" />
+                {t('purchase_report')}
+              </div>
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
         {userData?.role === 'super_admin' && (
           <TabsContent value="users" className="space-y-4">
@@ -541,8 +543,8 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-            <div className="p-0">
-              <Table>
+            <div className="p-0 overflow-x-auto no-scrollbar">
+              <Table className="min-w-[800px] sm:min-w-0">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-slate-100">
                     <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('restaurant')}</TableHead>
@@ -688,13 +690,13 @@ export default function AdminDashboard() {
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_categories')}</h4>
             </div>
-            <div className="p-0">
+            <div className="p-0 overflow-x-auto no-scrollbar">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
               >
-                <Table>
+                <Table className="min-w-[600px] sm:min-w-0">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100">
                       <TableHead className="w-12 py-6 pl-8"></TableHead>
@@ -878,8 +880,8 @@ export default function AdminDashboard() {
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('market_items')}</h4>
             </div>
-            <div className="p-0">
-              <Table>
+            <div className="p-0 overflow-x-auto no-scrollbar">
+              <Table className="min-w-[800px] sm:min-w-0">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-slate-100">
                     <TableHead className="w-12 py-6 pl-8">
@@ -1012,9 +1014,9 @@ export default function AdminDashboard() {
                 {t('print_list')}
               </Button>
             </div>
-            <div className="p-0">
+            <div className="p-0 overflow-x-auto no-scrollbar">
               <div className="print:block">
-                <Table>
+                <Table className="min-w-[800px] sm:min-w-0">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100">
                       <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('item_to_buy')}</TableHead>

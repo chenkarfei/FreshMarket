@@ -95,13 +95,13 @@ export default function UserManagement() {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
         <div>
-          <h3 className="text-3xl font-black tracking-tight text-slate-900 mb-1">{t('user_management')}</h3>
-          <p className="text-slate-500 text-sm font-medium">{t('manage_system_users_and_roles')}</p>
+          <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 mb-1">{t('user_management')}</h3>
+          <p className="text-slate-500 text-xs sm:text-sm font-medium">{t('manage_system_users_and_roles')}</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full sm:w-auto">
           <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
             <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
               <DialogHeader>
@@ -156,7 +156,7 @@ export default function UserManagement() {
                   setIsEditing(false);
                   setIsDialogOpen(true);
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
               >
                 {t('add_new_user')}
               </Button>
@@ -243,8 +243,8 @@ export default function UserManagement() {
         <div className="p-8 border-b border-slate-100 bg-white/50">
           <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('all_users')}</h4>
         </div>
-        <div className="p-0">
-          <Table>
+        <div className="p-0 overflow-x-auto no-scrollbar">
+          <Table className="min-w-[800px] sm:min-w-0">
             <TableHeader>
               <TableRow className="hover:bg-transparent border-slate-100">
                 <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pl-8">{t('name')}</TableHead>
