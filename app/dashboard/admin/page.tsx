@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import html2pdf from 'html2pdf.js';
+import domtoimage from 'dom-to-image-more';
 import {
   DndContext,
   closestCenter,
@@ -265,41 +265,61 @@ export default function AdminDashboard() {
     return { ...item, totalQty, details };
   }).filter(item => item.totalQty > 0);
 
-  const handlePrintList = () => {
+  const handlePrintList = async () => {
     const element = document.createElement('div');
-    element.style.padding = '20px';
+    element.style.padding = '40px';
     element.style.fontFamily = 'Inter, sans-serif';
+    element.style.backgroundColor = 'white';
+    element.style.color = '#1e293b';
+    element.style.width = '800px';
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.top = '0';
+    
+    // Reset global styles that might interfere
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .pdf-container * { border: none !important; outline: none !important; box-shadow: none !important; margin: 0; padding: 0; box-sizing: border-box; }
+      .pdf-container table { border-collapse: collapse !important; width: 100% !important; margin-top: 20px !important; }
+      .pdf-container th { background-color: #f8fafc !important; color: #64748b !important; font-weight: 600 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; padding: 12px !important; border-bottom: 2px solid #e2e8f0 !important; text-align: left !important; }
+      .pdf-container td { padding: 12px !important; border-bottom: 1px solid #f1f5f9 !important; font-size: 13px !important; color: #334155 !important; vertical-align: top !important; }
+      .pdf-container .item-name { font-weight: 600 !important; color: #0f172a !important; }
+      .pdf-container .qty-cell { font-weight: 700 !important; color: #059669 !important; }
+      .pdf-container .breakdown-text { color: #64748b !important; font-size: 11px !important; line-height: 1.5 !important; }
+    `;
+    element.className = 'pdf-container';
+    element.appendChild(style);
+    document.body.appendChild(element);
+    
+    const header = document.createElement('div');
+    header.style.borderBottom = '2px solid #10b981';
+    header.style.paddingBottom = '20px';
+    header.style.marginBottom = '30px';
     
     const title = document.createElement('h1');
     title.innerText = t('consolidated_purchase_list');
-    title.style.fontSize = '24px';
-    title.style.fontWeight = 'bold';
-    title.style.marginBottom = '10px';
-    element.appendChild(title);
+    title.style.fontSize = '28px';
+    title.style.fontWeight = '800';
+    title.style.color = '#0f172a';
+    title.style.letterSpacing = '-0.02em';
+    header.appendChild(title);
     
     const meta = document.createElement('p');
     meta.innerText = `${t('generated_on')}: ${format(new Date(), 'PPpp')}`;
     meta.style.fontSize = '12px';
-    meta.style.color = '#666';
-    meta.style.marginBottom = '20px';
-    element.appendChild(meta);
+    meta.style.color = '#94a3b8';
+    meta.style.marginTop = '4px';
+    header.appendChild(meta);
+    
+    element.appendChild(header);
     
     const table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
-    table.style.fontSize = '12px';
-    
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    headerRow.style.backgroundColor = '#424242';
-    headerRow.style.color = '#fff';
     
     [t('item_to_buy'), t('total_quantity'), t('breakdown')].forEach(text => {
       const th = document.createElement('th');
       th.innerText = text;
-      th.style.padding = '10px';
-      th.style.textAlign = 'left';
-      th.style.border = '1px solid #ddd';
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
@@ -310,24 +330,18 @@ export default function AdminDashboard() {
       const row = document.createElement('tr');
       
       const nameCell = document.createElement('td');
+      nameCell.className = 'item-name';
       nameCell.innerText = item.name;
-      nameCell.style.padding = '10px';
-      nameCell.style.border = '1px solid #ddd';
-      nameCell.style.fontWeight = 'bold';
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
+      qtyCell.className = 'qty-cell';
       qtyCell.innerText = `${item.totalQty} ${item.unit}`;
-      qtyCell.style.padding = '10px';
-      qtyCell.style.border = '1px solid #ddd';
-      qtyCell.style.fontWeight = 'bold';
-      qtyCell.style.color = '#2563eb';
       row.appendChild(qtyCell);
       
       const breakdownCell = document.createElement('td');
+      breakdownCell.className = 'breakdown-text';
       breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${item.unit}`).join(', ');
-      breakdownCell.style.padding = '10px';
-      breakdownCell.style.border = '1px solid #ddd';
       row.appendChild(breakdownCell);
       
       tbody.appendChild(row);
@@ -335,15 +349,26 @@ export default function AdminDashboard() {
     table.appendChild(tbody);
     element.appendChild(table);
 
-    const opt = {
-      margin: 10,
-      filename: `Purchase_List_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
+    try {
+      const dataUrl = await domtoimage.toPng(element, {
+        bgcolor: 'white',
+        width: 800,
+        height: element.scrollHeight,
+        style: { transform: 'scale(1)', transformOrigin: 'top left' }
+      });
 
-    html2pdf().set(opt).from(element).save();
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Purchase_List_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      document.body.removeChild(element);
+    }
   };
 
   const sensors = useSensors(

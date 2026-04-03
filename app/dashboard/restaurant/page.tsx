@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import html2pdf from 'html2pdf.js';
+import domtoimage from 'dom-to-image-more';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
@@ -161,53 +161,78 @@ export default function RestaurantDashboard() {
     }
   };
 
-  const handlePrintOrder = (order: any) => {
+  const handlePrintOrder = async (order: any) => {
     const element = document.createElement('div');
-    element.style.padding = '20px';
+    element.style.padding = '40px';
     element.style.fontFamily = 'Inter, sans-serif';
+    element.style.backgroundColor = 'white';
+    element.style.color = '#1e293b';
+    element.style.width = '800px';
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.top = '0';
+    
+    // Reset global styles that might interfere
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .pdf-container * { border: none !important; outline: none !important; box-shadow: none !important; margin: 0; padding: 0; box-sizing: border-box; }
+      .pdf-container table { border-collapse: collapse !important; width: 100% !important; margin-top: 20px !important; }
+      .pdf-container th { background-color: #10b981 !important; color: white !important; font-weight: 600 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; padding: 12px !important; text-align: left !important; }
+      .pdf-container th.text-right { text-align: right !important; }
+      .pdf-container td { padding: 12px !important; border-bottom: 1px solid #f1f5f9 !important; font-size: 13px !important; color: #334155 !important; }
+      .pdf-container .item-name { font-weight: 600 !important; color: #0f172a !important; }
+      .pdf-container .price-cell { text-align: right !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 600 !important; }
+      .pdf-container .total-section { margin-top: 30px !important; padding-top: 20px !important; border-top: 2px solid #f1f5f9 !important; text-align: right !important; }
+    `;
+    element.className = 'pdf-container';
+    element.appendChild(style);
+    document.body.appendChild(element);
+    
+    const header = document.createElement('div');
+    header.style.marginBottom = '40px';
+    header.style.borderBottom = '2px solid #10b981';
+    header.style.paddingBottom = '20px';
     
     const title = document.createElement('h1');
-    title.innerText = `${t('order_details')} - ${userData?.name}`;
+    title.innerText = `${t('order_details')} - ${userData?.name || ''}`;
     title.style.fontSize = '24px';
-    title.style.fontWeight = 'bold';
-    title.style.marginBottom = '10px';
-    element.appendChild(title);
+    title.style.fontWeight = '800';
+    title.style.color = '#0f172a';
+    title.style.letterSpacing = '-0.02em';
+    header.appendChild(title);
     
-    const meta = document.createElement('div');
-    meta.style.fontSize = '12px';
-    meta.style.color = '#666';
-    meta.style.marginBottom = '20px';
+    const metaInfo = document.createElement('div');
+    metaInfo.style.display = 'flex';
+    metaInfo.style.flexDirection = 'column';
+    metaInfo.style.gap = '6px';
+    metaInfo.style.marginTop = '15px';
     
     const dateLine = document.createElement('p');
-    dateLine.innerText = `${t('order_date')}: ${format(new Date(order.orderDate), 'EEEE, MMM dd, yyyy')}`;
-    meta.appendChild(dateLine);
+    dateLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('order_date')} :</span> <span style="color: #334155;">${format(new Date(order.orderDate), 'PP')}</span>`;
+    dateLine.style.fontSize = '13px';
+    metaInfo.appendChild(dateLine);
     
     const statusLine = document.createElement('p');
-    statusLine.innerText = `${t('status')}: ${t(order.status) || order.status}`;
-    meta.appendChild(statusLine);
+    statusLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('status')} :</span> <span style="font-weight: 700; color: #059669;">${(t(order.status) || order.status)}</span>`;
+    statusLine.style.fontSize = '13px';
+    metaInfo.appendChild(statusLine);
+
+    const generatedLine = document.createElement('p');
+    generatedLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('generated_on')} :</span> <span style="color: #334155;">${format(new Date(), 'PPpp')}</span>`;
+    generatedLine.style.fontSize = '13px';
+    metaInfo.appendChild(generatedLine);
     
-    const genLine = document.createElement('p');
-    genLine.innerText = `${t('generated_on')}: ${format(new Date(), 'PPpp')}`;
-    meta.appendChild(genLine);
-    
-    element.appendChild(meta);
+    header.appendChild(metaInfo);
+    element.appendChild(header);
     
     const table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
-    table.style.fontSize = '12px';
-    
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    headerRow.style.backgroundColor = '#10b981';
-    headerRow.style.color = '#fff';
     
-    [t('item'), t('quantity'), t('price')].forEach(text => {
+    [t('item'), t('quantity'), t('price')].forEach((text, index) => {
       const th = document.createElement('th');
       th.innerText = text;
-      th.style.padding = '10px';
-      th.style.textAlign = 'left';
-      th.style.border = '1px solid #ddd';
+      if (index === 2) th.className = 'text-right';
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
@@ -218,23 +243,17 @@ export default function RestaurantDashboard() {
       const row = document.createElement('tr');
       
       const nameCell = document.createElement('td');
+      nameCell.className = 'item-name';
       nameCell.innerText = item.name;
-      nameCell.style.padding = '10px';
-      nameCell.style.border = '1px solid #ddd';
-      nameCell.style.fontWeight = 'bold';
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
       qtyCell.innerText = `${item.quantity} ${item.unit}`;
-      qtyCell.style.padding = '10px';
-      qtyCell.style.border = '1px solid #ddd';
       row.appendChild(qtyCell);
       
       const priceCell = document.createElement('td');
+      priceCell.className = 'price-cell';
       priceCell.innerText = `RM ${(item.priceRangeMin * item.quantity).toFixed(2)}`;
-      priceCell.style.padding = '10px';
-      priceCell.style.border = '1px solid #ddd';
-      priceCell.style.textAlign = 'right';
       row.appendChild(priceCell);
       
       tbody.appendChild(row);
@@ -242,23 +261,45 @@ export default function RestaurantDashboard() {
     table.appendChild(tbody);
     element.appendChild(table);
     
-    const total = document.createElement('h2');
-    total.innerText = `${t('total')}: RM ${order.totalMin.toFixed(2)}`;
-    total.style.fontSize = '18px';
-    total.style.fontWeight = 'bold';
-    total.style.marginTop = '20px';
-    total.style.textAlign = 'right';
-    element.appendChild(total);
+    const totalSection = document.createElement('div');
+    totalSection.className = 'total-section';
+    
+    const totalLabel = document.createElement('span');
+    totalLabel.innerText = `${t('total')}: `;
+    totalLabel.style.fontSize = '14px';
+    totalLabel.style.color = '#64748b';
+    totalLabel.style.fontWeight = '600';
+    totalSection.appendChild(totalLabel);
+    
+    const totalAmount = document.createElement('span');
+    totalAmount.innerText = `RM ${order.totalMin.toFixed(2)}`;
+    totalAmount.style.fontSize = '24px';
+    totalAmount.style.fontWeight = '800';
+    totalAmount.style.color = '#0f172a';
+    totalSection.appendChild(totalAmount);
+    
+    element.appendChild(totalSection);
+    
+    try {
+      const dataUrl = await domtoimage.toPng(element, {
+        bgcolor: 'white',
+        width: 800,
+        height: element.scrollHeight,
+        style: { transform: 'scale(1)', transformOrigin: 'top left' }
+      });
 
-    const opt = {
-      margin: 10,
-      filename: `Order_${order.orderDate}_${userData?.name}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-    };
-
-    html2pdf().set(opt).from(element).save();
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Order_${order.orderDate}_${userData?.name}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      document.body.removeChild(element);
+    }
   };
 
   if (userData?.role !== 'restaurant') return <div>Unauthorized</div>;
