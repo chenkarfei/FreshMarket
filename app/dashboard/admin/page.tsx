@@ -19,7 +19,8 @@ import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import domtoimage from 'dom-to-image-more';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const domtoimage = require('dom-to-image-more') as any;
 import {
   DndContext,
   closestCenter,
