@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2pdf from 'html2pdf.js';
 import {
   DndContext,
   closestCenter,
@@ -265,38 +266,84 @@ export default function AdminDashboard() {
   }).filter(item => item.totalQty > 0);
 
   const handlePrintList = () => {
-    const doc = new jsPDF();
+    const element = document.createElement('div');
+    element.style.padding = '20px';
+    element.style.fontFamily = 'Inter, sans-serif';
     
-    doc.setFontSize(18);
-    doc.text(t('consolidated_purchase_list'), 14, 22);
+    const title = document.createElement('h1');
+    title.innerText = t('consolidated_purchase_list');
+    title.style.fontSize = '24px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '10px';
+    element.appendChild(title);
     
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`${t('generated_on')}: ${format(new Date(), 'PPpp')}`, 14, 30);
-
-    const tableData = purchaseReport.map(item => {
-      const breakdown = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${item.unit}`).join(', ');
-      return [
-        item.name,
-        `${item.totalQty} ${item.unit}`,
-        breakdown
-      ];
+    const meta = document.createElement('p');
+    meta.innerText = `${t('generated_on')}: ${format(new Date(), 'PPpp')}`;
+    meta.style.fontSize = '12px';
+    meta.style.color = '#666';
+    meta.style.marginBottom = '20px';
+    element.appendChild(meta);
+    
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.fontSize = '12px';
+    
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    headerRow.style.backgroundColor = '#424242';
+    headerRow.style.color = '#fff';
+    
+    [t('item_to_buy'), t('total_quantity'), t('breakdown')].forEach(text => {
+      const th = document.createElement('th');
+      th.innerText = text;
+      th.style.padding = '10px';
+      th.style.textAlign = 'left';
+      th.style.border = '1px solid #ddd';
+      headerRow.appendChild(th);
     });
-
-    autoTable(doc, {
-      startY: 36,
-      head: [[t('item_to_buy'), t('total_quantity'), t('breakdown')]],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [66, 66, 66] },
-      styles: { fontSize: 10, cellPadding: 4 },
-      columnStyles: {
-        0: { fontStyle: 'bold' },
-        1: { fontStyle: 'bold', textColor: [37, 99, 235] }
-      }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement('tbody');
+    purchaseReport.forEach(item => {
+      const row = document.createElement('tr');
+      
+      const nameCell = document.createElement('td');
+      nameCell.innerText = item.name;
+      nameCell.style.padding = '10px';
+      nameCell.style.border = '1px solid #ddd';
+      nameCell.style.fontWeight = 'bold';
+      row.appendChild(nameCell);
+      
+      const qtyCell = document.createElement('td');
+      qtyCell.innerText = `${item.totalQty} ${item.unit}`;
+      qtyCell.style.padding = '10px';
+      qtyCell.style.border = '1px solid #ddd';
+      qtyCell.style.fontWeight = 'bold';
+      qtyCell.style.color = '#2563eb';
+      row.appendChild(qtyCell);
+      
+      const breakdownCell = document.createElement('td');
+      breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${item.unit}`).join(', ');
+      breakdownCell.style.padding = '10px';
+      breakdownCell.style.border = '1px solid #ddd';
+      row.appendChild(breakdownCell);
+      
+      tbody.appendChild(row);
     });
+    table.appendChild(tbody);
+    element.appendChild(table);
 
-    doc.save(`Purchase_List_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    const opt = {
+      margin: 10,
+      filename: `Purchase_List_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
   };
 
   const sensors = useSensors(

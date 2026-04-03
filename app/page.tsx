@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 export default function LoginPage() {
   const { user, userData, loading } = useAuth();
@@ -100,9 +101,7 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="inline-block mb-4"
           >
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-none flex items-center justify-center shadow-lg shadow-emerald-500/20 mx-auto">
-              <span className="text-white text-3xl font-black">F</span>
-            </div>
+            <Logo size={64} className="mx-auto shadow-lg shadow-emerald-500/20" />
           </motion.div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 font-outfit">
             Fresh<span className="text-emerald-600">Market</span>

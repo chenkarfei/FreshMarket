@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2pdf from 'html2pdf.js';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
@@ -161,42 +162,103 @@ export default function RestaurantDashboard() {
   };
 
   const handlePrintOrder = (order: any) => {
-    const doc = new jsPDF();
+    const element = document.createElement('div');
+    element.style.padding = '20px';
+    element.style.fontFamily = 'Inter, sans-serif';
     
-    doc.setFontSize(18);
-    doc.text(`${t('order_details')} - ${userData?.name}`, 14, 22);
+    const title = document.createElement('h1');
+    title.innerText = `${t('order_details')} - ${userData?.name}`;
+    title.style.fontSize = '24px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '10px';
+    element.appendChild(title);
     
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`${t('order_date')}: ${format(new Date(order.orderDate), 'EEEE, MMM dd, yyyy')}`, 14, 30);
-    doc.text(`${t('status')}: ${t(order.status) || order.status}`, 14, 36);
-    doc.text(`${t('generated_on')}: ${format(new Date(), 'PPpp')}`, 14, 42);
-
-    const tableData = order.items.map((item: any) => [
-      item.name,
-      `${item.quantity} ${item.unit}`,
-      `RM ${(item.priceRangeMin * item.quantity).toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-      startY: 50,
-      head: [[t('item'), t('quantity'), t('price')]],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [16, 185, 129] }, // Emerald-500
-      styles: { fontSize: 10, cellPadding: 4 },
-      columnStyles: {
-        0: { fontStyle: 'bold' },
-        2: { halign: 'right' }
-      }
+    const meta = document.createElement('div');
+    meta.style.fontSize = '12px';
+    meta.style.color = '#666';
+    meta.style.marginBottom = '20px';
+    
+    const dateLine = document.createElement('p');
+    dateLine.innerText = `${t('order_date')}: ${format(new Date(order.orderDate), 'EEEE, MMM dd, yyyy')}`;
+    meta.appendChild(dateLine);
+    
+    const statusLine = document.createElement('p');
+    statusLine.innerText = `${t('status')}: ${t(order.status) || order.status}`;
+    meta.appendChild(statusLine);
+    
+    const genLine = document.createElement('p');
+    genLine.innerText = `${t('generated_on')}: ${format(new Date(), 'PPpp')}`;
+    meta.appendChild(genLine);
+    
+    element.appendChild(meta);
+    
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.fontSize = '12px';
+    
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    headerRow.style.backgroundColor = '#10b981';
+    headerRow.style.color = '#fff';
+    
+    [t('item'), t('quantity'), t('price')].forEach(text => {
+      const th = document.createElement('th');
+      th.innerText = text;
+      th.style.padding = '10px';
+      th.style.textAlign = 'left';
+      th.style.border = '1px solid #ddd';
+      headerRow.appendChild(th);
     });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    const tbody = document.createElement('tbody');
+    order.items.forEach((item: any) => {
+      const row = document.createElement('tr');
+      
+      const nameCell = document.createElement('td');
+      nameCell.innerText = item.name;
+      nameCell.style.padding = '10px';
+      nameCell.style.border = '1px solid #ddd';
+      nameCell.style.fontWeight = 'bold';
+      row.appendChild(nameCell);
+      
+      const qtyCell = document.createElement('td');
+      qtyCell.innerText = `${item.quantity} ${item.unit}`;
+      qtyCell.style.padding = '10px';
+      qtyCell.style.border = '1px solid #ddd';
+      row.appendChild(qtyCell);
+      
+      const priceCell = document.createElement('td');
+      priceCell.innerText = `RM ${(item.priceRangeMin * item.quantity).toFixed(2)}`;
+      priceCell.style.padding = '10px';
+      priceCell.style.border = '1px solid #ddd';
+      priceCell.style.textAlign = 'right';
+      row.appendChild(priceCell);
+      
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    element.appendChild(table);
+    
+    const total = document.createElement('h2');
+    total.innerText = `${t('total')}: RM ${order.totalMin.toFixed(2)}`;
+    total.style.fontSize = '18px';
+    total.style.fontWeight = 'bold';
+    total.style.marginTop = '20px';
+    total.style.textAlign = 'right';
+    element.appendChild(total);
 
-    const finalY = (doc as any).lastAutoTable.finalY || 50;
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text(`${t('total')}: RM ${order.totalMin.toFixed(2)}`, 14, finalY + 15);
+    const opt = {
+      margin: 10,
+      filename: `Order_${order.orderDate}_${userData?.name}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-    doc.save(`Order_${order.orderDate}_${userData?.name}.pdf`);
+    html2pdf().set(opt).from(element).save();
   };
 
   if (userData?.role !== 'restaurant') return <div>Unauthorized</div>;
@@ -504,40 +566,42 @@ export default function RestaurantDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between sm:justify-end gap-10 mt-6 sm:mt-0">
-                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-none border border-slate-100">
+                    <div className="flex flex-wrap items-center justify-between sm:justify-end gap-4 sm:gap-10 mt-6 sm:mt-0">
+                      <div className="flex items-center gap-2 sm:gap-4 bg-slate-50 p-1 rounded-none border border-slate-100">
                         <button 
                           onClick={() => updateQuantity(item.itemId, item.quantity - 1)} 
                           disabled={!canEdit} 
-                          className="h-10 w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          className="h-8 w-8 sm:h-10 sm:w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </button>
-                        <span className="w-8 text-center font-black text-slate-900 text-base">{item.quantity}</span>
+                        <span className="w-6 sm:w-8 text-center font-black text-slate-900 text-sm sm:text-base">{item.quantity}</span>
                         <button 
                           onClick={() => updateQuantity(item.itemId, item.quantity + 1)} 
                           disabled={!canEdit} 
-                          className="h-10 w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          className="h-8 w-8 sm:h-10 sm:w-10 rounded-none bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </button>
                       </div>
                       
-                      <div className="text-right min-w-[120px]">
-                        <div className="flex items-baseline justify-end gap-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">RM</span>
-                          <span className="text-xl font-black text-slate-900">{(item.priceRangeMin * item.quantity).toFixed(2)}</span>
+                      <div className="flex items-center gap-4 sm:gap-8">
+                        <div className="text-right min-w-[80px] sm:min-w-[120px]">
+                          <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">RM</span>
+                            <span className="text-lg sm:text-xl font-black text-slate-900">{(item.priceRangeMin * item.quantity).toFixed(2)}</span>
+                          </div>
+                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Total</p>
                         </div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Total</p>
-                      </div>
 
-                      <button 
-                        onClick={() => updateQuantity(item.itemId, 0)}
-                        disabled={!canEdit}
-                        className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                        <button 
+                          onClick={() => updateQuantity(item.itemId, 0)}
+                          disabled={!canEdit}
+                          className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}

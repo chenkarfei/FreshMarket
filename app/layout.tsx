@@ -12,6 +12,9 @@ const outfit = Outfit({ subsets: ['latin'], variable: '--font-heading' });
 export const metadata: Metadata = {
   title: 'FreshMarket: Restaurant Supply Chain',
   description: 'B2B daily market procurement system for restaurants in Malaysia.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
