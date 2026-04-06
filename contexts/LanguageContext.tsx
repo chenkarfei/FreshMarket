@@ -151,6 +151,18 @@ export const translations: Translations = {
   "added_to_cart": { en: "Added to cart", zh: "已加入购物车" },
   "order_submitted": { en: "Order submitted", zh: "订单已提交" },
   "order_saved_as_draft": { en: "Order saved as draft", zh: "订单已保存为草稿" },
+  "draft": { en: "Draft", zh: "草稿" },
+  "submitted": { en: "Submitted", zh: "已提交" },
+  "acknowledged": { en: "Acknowledged", zh: "已确认" },
+  "order_date": { en: "Order Date", zh: "订单日期" },
+  "price": { en: "Price", zh: "价格" },
+  "total": { en: "Total", zh: "总计" },
+  "print": { en: "Print", zh: "打印" },
+  "order_id": { en: "Order ID", zh: "订单 ID" },
+  "manage_orders_and_inventory": { en: "Manage Orders and Inventory", zh: "管理订单和库存" },
+  "category_image": { en: "Category Image", zh: "分类图片" },
+  "item_image": { en: "Item Image", zh: "商品图片" },
+  "new_category": { en: "New Category", zh: "新分类" },
 };
 
 interface LanguageContextType {

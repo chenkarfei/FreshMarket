@@ -551,7 +551,7 @@ export default function RestaurantDashboard() {
                         </Badge>
                       </div>
                       {cart.find(i => i.itemId === item.id) && (
-                        <div className="absolute top-3 right-3 z-10">
+                        <div className="absolute bottom-3 right-3 z-10">
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                             <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30 rounded-none">
                               {cart.find(i => i.itemId === item.id)?.quantity} IN CART
