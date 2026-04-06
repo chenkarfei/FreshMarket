@@ -61,7 +61,8 @@ service cloud.firestore {
     function isValidCategory(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.order is number &&
-             data.isActive is bool;
+             data.isActive is bool &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 800000));
     }
     
     function isValidItem(data) {
@@ -70,7 +71,8 @@ service cloud.firestore {
              data.priceRangeMin is number && data.priceRangeMin >= 0 &&
              data.priceRangeMax is number && data.priceRangeMax >= data.priceRangeMin &&
              data.unit is string && data.unit.size() > 0 && data.unit.size() < 50 &&
-             data.isActive is bool;
+             data.isActive is bool &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 800000));
     }
     
     function isValidOrder(data) {

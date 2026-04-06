@@ -19,8 +19,9 @@ import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const domtoimage = require('dom-to-image-more') as any;
+import domtoimage from 'dom-to-image-more';
+import Image from 'next/image';
+import { ImageUpload } from '@/components/ui/image-upload';
 import {
   DndContext,
   closestCenter,
@@ -69,7 +70,25 @@ function SortableCategoryRow({ category, onEdit, t }: { category: any, onEdit: (
         </div>
       </TableCell>
       <TableCell className="py-4">
-        <span className="font-bold text-slate-900">{category.name}</span>
+        <div className="flex items-center gap-3">
+          {category.imageUrl ? (
+            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-100 shadow-sm shrink-0">
+              <Image 
+                src={category.imageUrl} 
+                alt={category.name} 
+                fill 
+                className="object-cover"
+                referrerPolicy="no-referrer"
+                unoptimized={category.imageUrl.startsWith('http')}
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+              <Filter className="h-4 w-4 text-slate-300" />
+            </div>
+          )}
+          <span className="font-bold text-slate-900">{category.name}</span>
+        </div>
       </TableCell>
       <TableCell className="font-medium text-slate-600">{category.order}</TableCell>
       <TableCell>
@@ -90,7 +109,7 @@ export default function AdminDashboard() {
   
   // Item Form State
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
-  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, priceRangeMin: number | string, priceRangeMax: number | string, unit: string }>({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
+  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, priceRangeMin: number | string, priceRangeMax: number | string, unit: string, imageUrl: string }>({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkCategoryDialogOpen, setIsBulkCategoryDialogOpen] = useState(false);
   const [isBulkAcknowledgeLoading, setIsBulkAcknowledgeLoading] = useState(false);
@@ -98,7 +117,7 @@ export default function AdminDashboard() {
 
   // Category Form State
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<{ id: string, name: string, order: number | string }>({ id: '', name: '', order: 0 });
+  const [categoryForm, setCategoryForm] = useState<{ id: string, name: string, order: number | string, imageUrl: string }>({ id: '', name: '', order: 0, imageUrl: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
 
@@ -137,12 +156,13 @@ export default function AdminDashboard() {
         priceRangeMin: Number(itemForm.priceRangeMin),
         priceRangeMax: Number(itemForm.priceRangeMax),
         unit: itemForm.unit,
-        isActive: true
+        isActive: true,
+        imageUrl: itemForm.imageUrl || ''
       }, { merge: true });
       
       toast.success(t('item_saved'));
       setIsItemDialogOpen(false);
-      setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
+      setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -158,12 +178,13 @@ export default function AdminDashboard() {
       await setDoc(doc(db, 'categories', categoryId), {
         name: categoryForm.name,
         order: Number(categoryForm.order),
-        isActive: true
+        isActive: true,
+        imageUrl: categoryForm.imageUrl || ''
       }, { merge: true });
       
       toast.success(t('category_saved'));
       setIsCategoryDialogOpen(false);
-      setCategoryForm({ id: '', name: '', order: 0 });
+      setCategoryForm({ id: '', name: '', order: 0, imageUrl: '' });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -719,7 +740,7 @@ export default function AdminDashboard() {
               <DialogTrigger render={
                 <Button 
                   onClick={() => {
-                    setCategoryForm({ id: '', name: '', order: categories.length + 1 });
+                    setCategoryForm({ id: '', name: '', order: categories.length + 1, imageUrl: '' });
                     setIsCategoryDialogOpen(true);
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
@@ -727,11 +748,16 @@ export default function AdminDashboard() {
                   {t('add_new_category')}
                 </Button>
               } />
-              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{categoryForm.id ? t('edit_category') : t('add_new_category')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCategorySubmit} className="space-y-6 mt-6">
+                  <ImageUpload 
+                    value={categoryForm.imageUrl} 
+                    onChange={(val) => setCategoryForm({...categoryForm, imageUrl: val})}
+                    label={t('category_image')}
+                  />
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category_name')}</Label>
                     <Input 
@@ -789,7 +815,7 @@ export default function AdminDashboard() {
                           category={category} 
                           t={t}
                           onEdit={(cat) => {
-                            setCategoryForm({ id: cat.id, name: cat.name, order: cat.order });
+                            setCategoryForm({ id: cat.id, name: cat.name, order: cat.order, imageUrl: cat.imageUrl || '' });
                             setIsCategoryDialogOpen(true);
                           }} 
                         />
@@ -854,7 +880,7 @@ export default function AdminDashboard() {
               <DialogTrigger render={
                 <Button 
                   onClick={() => {
-                    setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg' });
+                    setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
                     setIsItemDialogOpen(true);
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
@@ -862,11 +888,16 @@ export default function AdminDashboard() {
                   {t('add_new_item')}
                 </Button>
               } />
-              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md">
+              <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{itemForm.id ? t('edit_item') : t('add_new_item')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleItemSubmit} className="space-y-6 mt-6">
+                  <ImageUpload 
+                    value={itemForm.imageUrl} 
+                    onChange={(val) => setItemForm({...itemForm, imageUrl: val})}
+                    label={t('item_image')}
+                  />
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category')}</Label>
                     <Select value={itemForm.categoryId} onValueChange={v => setItemForm({...itemForm, categoryId: v || ''})}>
@@ -1031,7 +1062,25 @@ export default function AdminDashboard() {
                         />
                       </TableCell>
                       <TableCell className="py-6">
-                        <span className="font-bold text-slate-900">{item.name}</span>
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl ? (
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-100 shadow-sm shrink-0">
+                              <Image 
+                                src={item.imageUrl} 
+                                alt={item.name} 
+                                fill 
+                                className="object-cover"
+                                referrerPolicy="no-referrer"
+                                unoptimized={item.imageUrl.startsWith('http')}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                              <Package className="h-5 w-5 text-slate-300" />
+                            </div>
+                          )}
+                          <span className="font-bold text-slate-900">{item.name}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-slate-600 py-6 font-medium">{categories.find(c => c.id === item.categoryId)?.name || 'Unknown'}</TableCell>
                       <TableCell className="text-slate-600 py-6 font-medium">
@@ -1053,7 +1102,7 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
                         <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest transition-opacity duration-300" onClick={() => {
-                          setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit });
+                          setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit, imageUrl: item.imageUrl || '' });
                           setIsItemDialogOpen(true);
                         }}>{t('edit')}</Button>
                       </TableCell>

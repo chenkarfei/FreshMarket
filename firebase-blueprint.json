@@ -50,6 +50,10 @@
         },
         "isActive": {
           "type": "boolean"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Base64 encoded image or URL."
         }
       },
       "required": ["name", "order", "isActive"]
@@ -77,6 +81,10 @@
         },
         "isActive": {
           "type": "boolean"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Base64 encoded image or URL."
         }
       },
       "required": ["categoryId", "name", "priceRangeMin", "priceRangeMax", "unit", "isActive"]

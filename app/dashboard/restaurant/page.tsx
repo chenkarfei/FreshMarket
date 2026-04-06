@@ -18,10 +18,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion, AnimatePresence } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const domtoimage = require('dom-to-image-more') as any;
+import domtoimage from 'dom-to-image-more';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
@@ -58,7 +58,8 @@ export default function RestaurantDashboard() {
         const orderData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as any;
         setCurrentOrder(orderData);
         setCart(orderData.items || []);
-        setCanEdit(orderData.status === 'draft' || orderData.status === 'submitted');
+        // Only allow editing if it's a draft. Once submitted, it's locked to prevent duplicate submissions.
+        setCanEdit(orderData.status === 'draft');
       } else {
         setCurrentOrder(null);
         setCart([]);
@@ -128,7 +129,7 @@ export default function RestaurantDashboard() {
   };
 
   const saveOrder = async (status: 'draft' | 'submitted') => {
-    if (!userData) return;
+    if (!userData || isSubmitting) return;
     if (cart.length === 0) {
       toast.error('Cart is empty');
       return;
@@ -529,16 +530,34 @@ export default function RestaurantDashboard() {
                   className="group relative flex flex-col justify-between p-8 rounded-none border border-white/50 bg-white/80 backdrop-blur-md hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500"
                 >
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="bg-emerald-50/50 text-emerald-600 border-none px-3 py-0.5 text-[9px] uppercase tracking-widest font-black group-hover:bg-emerald-100 transition-colors rounded-none">
-                        {categories.find(c => c.id === item.categoryId)?.name}
-                      </Badge>
+                    <div className="relative w-full aspect-square rounded-none overflow-hidden border border-slate-100 bg-slate-50 group-hover:border-emerald-100 transition-all duration-500">
+                      {item.imageUrl ? (
+                        <Image 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          fill 
+                          className="object-cover group-hover:scale-110 transition-transform duration-700"
+                          referrerPolicy="no-referrer"
+                          unoptimized={item.imageUrl.startsWith('http')}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-200">
+                          <Package className="h-12 w-12" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 z-10">
+                        <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-emerald-600 border-none px-3 py-0.5 text-[9px] uppercase tracking-widest font-black shadow-sm rounded-none">
+                          {categories.find(c => c.id === item.categoryId)?.name}
+                        </Badge>
+                      </div>
                       {cart.find(i => i.itemId === item.id) && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30 rounded-none">
-                            {cart.find(i => i.itemId === item.id)?.quantity} IN CART
-                          </Badge>
-                        </motion.div>
+                        <div className="absolute top-3 right-3 z-10">
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30 rounded-none">
+                              {cart.find(i => i.itemId === item.id)?.quantity} IN CART
+                            </Badge>
+                          </motion.div>
+                        </div>
                       )}
                     </div>
                     <h4 className="text-xl font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">{item.name}</h4>
@@ -597,8 +616,21 @@ export default function RestaurantDashboard() {
                     className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-none border border-slate-100 bg-white hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
                   >
                     <div className="flex items-center gap-5">
-                      <div className="h-14 w-14 rounded-none bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
-                        <Package className="h-7 w-7" />
+                      <div className="h-16 w-16 rounded-none bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors overflow-hidden border border-slate-100">
+                        {items.find(i => i.id === item.itemId)?.imageUrl ? (
+                          <div className="relative w-full h-full">
+                            <Image 
+                              src={items.find(i => i.id === item.itemId).imageUrl} 
+                              alt={item.name} 
+                              fill 
+                              className="object-cover"
+                              referrerPolicy="no-referrer"
+                              unoptimized={items.find(i => i.id === item.itemId).imageUrl.startsWith('http')}
+                            />
+                          </div>
+                        ) : (
+                          <Package className="h-7 w-7" />
+                        )}
                       </div>
                       <div>
                         <h4 className="text-lg font-bold text-slate-900">{item.name}</h4>
