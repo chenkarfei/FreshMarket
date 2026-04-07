@@ -261,6 +261,11 @@ export const translations: Translations = {
   "Shrimp": { en: "Shrimp", zh: "虾" },
   "Crab": { en: "Crab", zh: "螃蟹" },
   "Squid": { en: "Squid", zh: "鱿鱼" },
+  "Organic Eggs": { en: "Organic Eggs", zh: "有机鸡蛋" },
+  "Noodles": { en: "Noodles", zh: "面条" },
+  "Long Bean": { en: "Long Bean", zh: "长豆角" },
+  "Flour": { en: "Flour", zh: "面粉" },
+  "Frozen Chicken": { en: "Frozen Chicken", zh: "冷冻鸡肉" },
   
   // Categories
   "Vegetables": { en: "Vegetables", zh: "蔬菜" },
