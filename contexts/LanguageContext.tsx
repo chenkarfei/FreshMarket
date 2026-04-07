@@ -69,7 +69,7 @@ export const translations: Translations = {
   "item_name": { en: "Item Name", zh: "商品名称" },
   "min_price": { en: "Min Price", zh: "最低价格" },
   "max_price": { en: "Max Price", zh: "最高价格" },
-  "unit": { en: "Unit (e.g., kg, bundle, box)", zh: "单位 (例如: kg, bundle, box)" },
+  "unit_label": { en: "Unit (e.g., kg, bundle, box)", zh: "单位 (例如: kg, bundle, box)" },
   "save_item": { en: "Save Item", zh: "保存商品" },
   "change_category_for": { en: "Change Category for", zh: "更改分类" },
   "update_category": { en: "Update Category", zh: "更新分类" },

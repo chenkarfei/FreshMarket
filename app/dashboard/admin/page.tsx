@@ -970,7 +970,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit')}</Label>
+                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit_label')}</Label>
                     <Input 
                       value={itemForm.unit} 
                       onChange={e => setItemForm({...itemForm, unit: e.target.value})} 
@@ -1058,7 +1058,7 @@ export default function AdminDashboard() {
                         ) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
                       </div>
                     </TableHead>
-                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('unit')}</TableHead>
+                    <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('unit_label')}</TableHead>
                     <TableHead 
                       className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 cursor-pointer hover:text-emerald-600 transition-colors"
                       onClick={() => requestSort('status')}
