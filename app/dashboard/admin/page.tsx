@@ -1184,10 +1184,10 @@ export default function AdminDashboard() {
                         transition={{ delay: idx * 0.03 }}
                         className="border-slate-50 hover:bg-emerald-50/30 transition-colors"
                       >
-                        <TableCell className="font-black text-slate-900 py-8 pl-8 text-lg tracking-tight">{item.name}</TableCell>
+                        <TableCell className="font-black text-slate-900 py-8 pl-8 text-lg tracking-tight">{t(item.name)}</TableCell>
                         <TableCell className="py-8">
                           <span className="text-2xl font-black text-emerald-600 tracking-tighter">{item.totalQty}</span>
-                          <span className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">{item.unit}</span>
+                          <span className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">{t(item.unit)}</span>
                         </TableCell>
                         <TableCell className="py-8 pr-8">
                           <div className="flex flex-wrap gap-2">
