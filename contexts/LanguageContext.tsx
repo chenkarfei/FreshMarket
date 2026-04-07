@@ -266,6 +266,7 @@ export const translations: Translations = {
   "Long Bean": { en: "Long Bean", zh: "长豆角" },
   "Flour": { en: "Flour", zh: "面粉" },
   "Frozen Chicken": { en: "Frozen Chicken", zh: "冷冻鸡肉" },
+  "Frozen Seafood": { en: "Frozen Seafood", zh: "冷冻海鲜" },
   
   // Categories
   "Vegetables": { en: "Vegetables", zh: "蔬菜" },
