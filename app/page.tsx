@@ -23,8 +23,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useLanguage();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (!loading && user && userData) {
       if (userData.isActive === false) {
         auth.signOut();
@@ -166,7 +168,7 @@ export default function LoginPage() {
         </div>
         
         <p className="text-center mt-12 text-slate-400 text-[10px] font-black uppercase tracking-widest">
-          &copy; {new Date().getFullYear()} FreshMarket. All rights reserved.
+          &copy; {mounted ? new Date().getFullYear() : '2026'} FreshMarket. All rights reserved.
         </p>
       </motion.div>
     </div>

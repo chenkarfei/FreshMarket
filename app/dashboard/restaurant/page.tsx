@@ -25,7 +25,7 @@ import domtoimage from 'dom-to-image-more';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
-  const { t } = useLanguage();
+  const { t, td, formatDate } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -58,8 +58,8 @@ export default function RestaurantDashboard() {
         const orderData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as any;
         setCurrentOrder(orderData);
         setCart(orderData.items || []);
-        // Only allow editing if it's a draft. Once submitted, it's locked to prevent duplicate submissions.
-        setCanEdit(orderData.status === 'draft');
+        // Only allow editing if it's a draft or submitted. Once acknowledged, it's locked.
+        setCanEdit(orderData.status === 'draft' || orderData.status === 'submitted');
       } else {
         setCurrentOrder(null);
         setCart([]);
@@ -116,7 +116,7 @@ export default function RestaurantDashboard() {
     } else {
       setCart([...cart, { itemId: item.id, name: item.name, quantity: 1, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit }]);
     }
-    toast.success(`${t('added_to_cart')}: ${item.name}`);
+    toast.success(`${t('added_to_cart')}: ${td(item)}`);
   };
 
   const updateQuantity = (itemId: string, qty: number) => {
@@ -210,7 +210,7 @@ export default function RestaurantDashboard() {
     metaInfo.style.marginTop = '15px';
     
     const dateLine = document.createElement('p');
-    dateLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('order_date')} :</span> <span style="color: #334155;">${format(new Date(order.orderDate), 'PP')}</span>`;
+    dateLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('order_date')} :</span> <span style="color: #334155;">${formatDate(new Date(order.orderDate), 'PP')}</span>`;
     dateLine.style.fontSize = '13px';
     metaInfo.appendChild(dateLine);
     
@@ -220,7 +220,7 @@ export default function RestaurantDashboard() {
     metaInfo.appendChild(statusLine);
 
     const generatedLine = document.createElement('p');
-    generatedLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('generated_on')} :</span> <span style="color: #334155;">${format(new Date(), 'PPpp')}</span>`;
+    generatedLine.innerHTML = `<span style="font-weight: 700; color: #64748b;">${t('generated_on')} :</span> <span style="color: #334155;">${formatDate(new Date(), 'PPpp')}</span>`;
     generatedLine.style.fontSize = '13px';
     metaInfo.appendChild(generatedLine);
     
@@ -246,11 +246,11 @@ export default function RestaurantDashboard() {
       
       const nameCell = document.createElement('td');
       nameCell.className = 'item-name';
-      nameCell.innerText = item.name;
+      nameCell.innerText = td(item);
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
-      qtyCell.innerText = `${item.quantity} ${item.unit}`;
+      qtyCell.innerText = `${item.quantity} ${t(item.unit)}`;
       row.appendChild(qtyCell);
       
       const priceCell = document.createElement('td');
@@ -304,7 +304,7 @@ export default function RestaurantDashboard() {
     }
   };
 
-  if (userData?.role !== 'restaurant') return <div>Unauthorized</div>;
+  if (userData?.role !== 'restaurant') return <div>{t('unauthorized')}</div>;
 
   const cartTotalMin = cart.reduce((acc, item) => acc + (item.priceRangeMin * item.quantity), 0);
   const cartTotalMax = cart.reduce((acc, item) => acc + (item.priceRangeMax * item.quantity), 0);
@@ -325,12 +325,12 @@ export default function RestaurantDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 px-2 py-0 text-[10px] uppercase tracking-widest font-bold rounded-none">Restaurant Partner</Badge>
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 px-2 py-0 text-[10px] uppercase tracking-widest font-bold rounded-none">{t('restaurant_partner')}</Badge>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-1">
             {t('welcome')}, <span className="text-gradient">{userData.name}</span>
           </h2>
-          <p className="text-slate-500 text-sm font-medium">Manage your daily market orders and inventory with ease.</p>
+          <p className="text-slate-500 text-sm font-medium">{t('manage_daily_orders_ease')}</p>
         </div>
         <motion.div 
           whileHover={{ scale: 1.02 }}
@@ -381,8 +381,8 @@ export default function RestaurantDashboard() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order Date</span>
-                    <span className="text-sm font-bold text-slate-900">{format(new Date(), 'MMM dd, yyyy')}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('order_date')}</span>
+                    <span className="text-sm font-bold text-slate-900">{formatDate(new Date(), 'MMM dd, yyyy')}</span>
                   </div>
                 </div>
               ) : (
@@ -392,7 +392,7 @@ export default function RestaurantDashboard() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-slate-900 mb-1">{t('no_order_started')}</p>
-                    <p className="text-sm text-slate-400 leading-relaxed">Browse the market items below to start your daily order.</p>
+                    <p className="text-sm text-slate-400 leading-relaxed">{t('browse_market_items_begin')}</p>
                   </div>
                 </div>
               )}
@@ -416,14 +416,14 @@ export default function RestaurantDashboard() {
               />
               <CardContent className="p-10 relative z-10">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest group-hover:text-emerald-400 transition-colors duration-500">Estimated Total RM</span>
+                  <span className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest group-hover:text-emerald-400 transition-colors duration-500">{t('est_total_rm')}</span>
                   <div className="text-6xl font-black tracking-tighter text-white group-hover:text-emerald-50 transition-colors duration-500">
                     {cartTotalMin.toFixed(2)}
                   </div>
                   <div className="flex items-center gap-2 pt-3">
                     <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Market Range: <span className="text-white">{cartTotalMin.toFixed(2)}</span> — <span className="text-white">{cartTotalMax.toFixed(2)}</span>
+                      {t('market_range')} <span className="text-white">{cartTotalMin.toFixed(2)}</span> — <span className="text-white">{cartTotalMax.toFixed(2)}</span>
                     </p>
                   </div>
                 </div>
@@ -434,7 +434,7 @@ export default function RestaurantDashboard() {
                     className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-white rounded-[1.5rem] h-16 font-bold text-base shadow-xl shadow-emerald-500/20 transition-all active:scale-95 border-none"
                   >
                     {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                    {t('submit_order')}
+                    {currentOrder?.status === 'submitted' ? t('update_order') : t('submit_order')}
                   </Button>
                   <Button 
                     onClick={() => saveOrder('draft')} 
@@ -500,16 +500,14 @@ export default function RestaurantDashboard() {
               />
             </div>
             <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || 'all')}>
-              <SelectTrigger className="h-10 w-full sm:w-40 rounded-none border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5" />
-                  <SelectValue placeholder="All Categories" />
-                </div>
+              <SelectTrigger className="h-10 w-full sm:w-48 rounded-none border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                <Filter className="h-3.5 w-3.5 shrink-0" />
+                <SelectValue placeholder={t('all_categories')} />
               </SelectTrigger>
               <SelectContent className="rounded-none border-slate-100 shadow-xl">
-                <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider py-3">All Categories</SelectItem>
+                <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider py-3">{t('all_categories')}</SelectItem>
                 {categories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold uppercase tracking-wider py-3">{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold uppercase tracking-wider py-3">{td(cat)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -547,28 +545,28 @@ export default function RestaurantDashboard() {
                       )}
                       <div className="absolute top-3 left-3 z-10">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-emerald-600 border-none px-3 py-0.5 text-[9px] uppercase tracking-widest font-black shadow-sm rounded-none">
-                          {categories.find(c => c.id === item.categoryId)?.name}
+                          {td(categories.find(c => c.id === item.categoryId))}
                         </Badge>
                       </div>
                       {cart.find(i => i.itemId === item.id) && (
                         <div className="absolute bottom-3 right-3 z-10">
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                             <Badge className="bg-emerald-500 text-white border-none px-2.5 py-0.5 text-[9px] font-black shadow-lg shadow-emerald-500/30 rounded-none">
-                              {cart.find(i => i.itemId === item.id)?.quantity} IN CART
+                              {cart.find(i => i.itemId === item.id)?.quantity} {t('in_cart')}
                             </Badge>
                           </motion.div>
                         </div>
                       )}
                     </div>
-                    <h4 className="text-xl font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">{item.name}</h4>
+                    <h4 className="text-xl font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">{td(item)}</h4>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-xs font-bold text-slate-400">RM</span>
                       <span className="text-2xl font-black text-slate-900 tracking-tighter">{item.priceRangeMin.toFixed(2)}</span>
-                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">/ {item.unit}</span>
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">/ {t(item.unit)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold bg-slate-100/50 p-3 rounded-none border border-white/50">
                       <Info className="h-3.5 w-3.5 text-emerald-500" />
-                      Market Max: RM {item.priceRangeMax.toFixed(2)}
+                      {t('market_max_rm')} {item.priceRangeMax.toFixed(2)}
                     </div>
                   </div>
                   <div className="mt-10">
@@ -590,9 +588,9 @@ export default function RestaurantDashboard() {
                 <div className="h-20 w-20 rounded-none bg-slate-50 flex items-center justify-center mb-6">
                   <Search className="h-10 w-10 text-slate-200" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No items found</h3>
-                <p className="text-slate-400 max-w-xs mx-auto">We couldn&apos;t find any items matching your search or category filter.</p>
-                <Button variant="link" onClick={() => {setSearchQuery(''); setSelectedCategory('all');}} className="mt-4 text-emerald-600 font-bold">Clear all filters</Button>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">{t('no_items_found')}</h3>
+                <p className="text-slate-400 max-w-xs mx-auto">{t('no_items_matching_filter')}</p>
+                <Button variant="link" onClick={() => {setSearchQuery(''); setSelectedCategory('all');}} className="mt-4 text-emerald-600 font-bold">{t('clear_all_filters')}</Button>
               </div>
             )}
           </div>
@@ -602,8 +600,8 @@ export default function RestaurantDashboard() {
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Items in your order</h3>
-                <span className="text-[10px] text-slate-400 font-medium">{cart.length} unique items</span>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('items_in_your_order')}</h3>
+                <span className="text-[10px] text-slate-400 font-medium">{cart.length} {t('unique_items')}</span>
               </div>
               
               <div className="space-y-4">
@@ -633,9 +631,9 @@ export default function RestaurantDashboard() {
                         )}
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold text-slate-900">{item.name}</h4>
+                        <h4 className="text-lg font-bold text-slate-900">{td(items.find(i => i.id === item.itemId))}</h4>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                          RM {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)} / {item.unit}
+                          RM {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)} / {t(item.unit)}
                         </p>
                       </div>
                     </div>
@@ -665,7 +663,7 @@ export default function RestaurantDashboard() {
                             <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">RM</span>
                             <span className="text-lg sm:text-xl font-black text-slate-900">{(item.priceRangeMin * item.quantity).toFixed(2)}</span>
                           </div>
-                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Total</p>
+                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('est_total')}</p>
                         </div>
 
                         <button 
@@ -686,34 +684,34 @@ export default function RestaurantDashboard() {
                       <ShoppingCart className="h-12 w-12 text-slate-200" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{t('cart_is_empty')}</h3>
-                    <p className="text-slate-400 max-w-xs mx-auto">Your basket is waiting for some fresh produce. Head over to the browse tab to begin.</p>
+                    <p className="text-slate-400 max-w-xs mx-auto">{t('basket_waiting_fresh_produce')}</p>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-6">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 px-1">Order Summary</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 px-1">{t('order_summary')}</h3>
               <Card className="border-slate-100 shadow-xl shadow-slate-200/50 rounded-none overflow-hidden sticky top-8">
                 <CardContent className="p-8">
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Subtotal (Min)</span>
+                      <span className="text-sm font-bold text-slate-500">{t('subtotal_min')}</span>
                       <span className="text-sm font-black text-slate-900">RM {cartTotalMin.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-slate-500">Subtotal (Max)</span>
+                      <span className="text-sm font-bold text-slate-500">{t('subtotal_max')}</span>
                       <span className="text-sm font-black text-slate-900">RM {cartTotalMax.toFixed(2)}</span>
                     </div>
                     <div className="h-px bg-slate-100" />
                     <div className="flex justify-between items-end">
                       <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Est. Total RM</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('est_total_rm')}</span>
                         <div className="text-4xl font-black text-slate-900 tracking-tighter">
                           {cartTotalMin.toFixed(2)}
                         </div>
                       </div>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] rounded-none">FREE DELIVERY</Badge>
+                      <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] rounded-none">{t('free_delivery')}</Badge>
                     </div>
                     
                     <div className="pt-6 space-y-3">
@@ -726,7 +724,7 @@ export default function RestaurantDashboard() {
                         {t('submit_order')}
                       </Button>
                       <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed">
-                        By submitting, you agree to the daily market prices. Final invoice will be provided upon delivery.
+                        {t('submit_agreement_policy')}
                       </p>
                     </div>
                   </div>
@@ -739,7 +737,7 @@ export default function RestaurantDashboard() {
         <TabsContent value="history" className="space-y-8 outline-none">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('past_orders')}</h3>
-            <span className="text-[10px] text-slate-400 font-medium">{history.length} completed orders</span>
+            <span className="text-[10px] text-slate-400 font-medium">{history.length} {t('completed_orders')}</span>
           </div>
           
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -762,25 +760,25 @@ export default function RestaurantDashboard() {
                 </div>
                 
                 <div className="space-y-1 mb-8">
-                  <h4 className="text-xl font-black text-slate-900">{format(new Date(order.orderDate), 'EEEE, MMM dd')}</h4>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{order.items.length} Items Ordered</p>
+                  <h4 className="text-xl font-black text-slate-900">{formatDate(new Date(order.orderDate), 'EEEE, MMM dd')}</h4>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{order.items.length} {t('items_ordered')}</p>
                 </div>
                 
                 <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Paid RM</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('total_paid_rm')}</span>
                     <p className="text-2xl font-black text-slate-900 tracking-tight">{order.totalMin.toFixed(2)}</p>
                   </div>
                   <Dialog>
                     <DialogTrigger render={
                       <Button variant="ghost" size="sm" className="rounded-[1rem] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-bold text-xs">
-                        Details <ChevronRight className="h-4 w-4 ml-1" />
+                        {t('details')} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     } />
                     <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-none shadow-2xl rounded-none">
                       <DialogHeader className="flex flex-row items-center justify-between space-y-0 pr-6">
                         <DialogTitle className="text-2xl font-black text-slate-900">
-                          {t('order_details')} - {format(new Date(order.orderDate), 'EEEE, MMM dd')}
+                          {t('order_details')} - {formatDate(new Date(order.orderDate), 'EEEE, MMM dd')}
                         </DialogTitle>
                         <Button 
                           onClick={() => handlePrintOrder(order)} 
@@ -804,8 +802,8 @@ export default function RestaurantDashboard() {
                           <TableBody>
                             {order.items.map((item: any, idx: number) => (
                               <TableRow key={idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                <TableCell className="text-slate-900 font-bold py-4">{item.name}</TableCell>
-                                <TableCell className="text-slate-600 py-4 font-medium">{item.quantity} {item.unit}</TableCell>
+                                <TableCell className="text-slate-900 font-bold py-4">{td(items.find(i => i.id === item.itemId))}</TableCell>
+                                <TableCell className="text-slate-600 py-4 font-medium">{item.quantity} {t(item.unit)}</TableCell>
                                 <TableCell className="text-slate-900 font-black text-right py-4">
                                   <span className="text-[10px] text-slate-400 mr-1 font-bold">RM</span>
                                   {(item.priceRangeMin * item.quantity).toFixed(2)}
@@ -817,7 +815,7 @@ export default function RestaurantDashboard() {
                       </div>
                       <div className="mt-8 pt-8 border-t border-slate-100 flex justify-between items-center">
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Estimated Price</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('total_estimated_price_label')}</p>
                           <p className="text-3xl font-black text-slate-900 tracking-tighter">RM {order.totalMin.toFixed(2)}</p>
                         </div>
                         <Badge className={`border-none font-black text-xs px-4 py-2 rounded-none ${
@@ -839,7 +837,7 @@ export default function RestaurantDashboard() {
                   <Package className="h-12 w-12 text-slate-200" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{t('no_past_orders')}</h3>
-                <p className="text-slate-400 max-w-xs mx-auto">Your order history is currently empty. Once you complete your first order, it will appear here.</p>
+                <p className="text-slate-400 max-w-xs mx-auto">{t('order_history_empty_first_order')}</p>
               </div>
             )}
           </div>

@@ -7,10 +7,12 @@ import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Store } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Logo } from '@/components/ui/logo';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, userData, loading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <h1 className="text-lg font-bold tracking-tight text-slate-900 font-heading">FreshMarket</h1>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {userData?.role.replace('_', ' ')}
+                  {userData?.role ? t('role_' + userData.role) : ''}
                 </span>
               </div>
             </div>

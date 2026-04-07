@@ -41,12 +41,12 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText, CheckCircle2, Search, Printer } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
 
-function SortableCategoryRow({ category, onEdit, t }: { category: any, onEdit: (category: any) => void, t: any }) {
+function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdit: (category: any) => void, t: any, td: any }) {
   const {
     attributes,
     listeners,
@@ -87,7 +87,7 @@ function SortableCategoryRow({ category, onEdit, t }: { category: any, onEdit: (
               <Filter className="h-4 w-4 text-slate-300" />
             </div>
           )}
-          <span className="font-bold text-slate-900">{category.name}</span>
+          <span className="font-bold text-slate-900">{td(category)}</span>
         </div>
       </TableCell>
       <TableCell className="font-medium text-slate-600">{category.order}</TableCell>
@@ -100,7 +100,7 @@ function SortableCategoryRow({ category, onEdit, t }: { category: any, onEdit: (
 
 export default function AdminDashboard() {
   const { userData } = useAuth();
-  const { t } = useLanguage();
+  const { t, td, formatDate } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
   
   // Item Form State
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
-  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, priceRangeMin: number | string, priceRangeMax: number | string, unit: string, imageUrl: string }>({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, translations: Record<string, string>, priceRangeMin: number | string, priceRangeMax: number | string, unit: string, imageUrl: string }>({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkCategoryDialogOpen, setIsBulkCategoryDialogOpen] = useState(false);
   const [isBulkAcknowledgeLoading, setIsBulkAcknowledgeLoading] = useState(false);
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
 
   // Category Form State
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<{ id: string, name: string, order: number | string, imageUrl: string }>({ id: '', name: '', order: 0, imageUrl: '' });
+  const [categoryForm, setCategoryForm] = useState<{ id: string, name: string, translations: Record<string, string>, order: number | string, imageUrl: string }>({ id: '', name: '', translations: {}, order: 0, imageUrl: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
 
@@ -153,6 +153,7 @@ export default function AdminDashboard() {
       await setDoc(doc(db, 'items', itemId), {
         categoryId: itemForm.categoryId,
         name: itemForm.name,
+        translations: itemForm.translations || {},
         priceRangeMin: Number(itemForm.priceRangeMin),
         priceRangeMax: Number(itemForm.priceRangeMax),
         unit: itemForm.unit,
@@ -162,7 +163,7 @@ export default function AdminDashboard() {
       
       toast.success(t('item_saved'));
       setIsItemDialogOpen(false);
-      setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+      setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -177,6 +178,7 @@ export default function AdminDashboard() {
       const categoryId = categoryForm.id || uuidv4();
       await setDoc(doc(db, 'categories', categoryId), {
         name: categoryForm.name,
+        translations: categoryForm.translations || {},
         order: Number(categoryForm.order),
         isActive: true,
         imageUrl: categoryForm.imageUrl || ''
@@ -184,7 +186,7 @@ export default function AdminDashboard() {
       
       toast.success(t('category_saved'));
       setIsCategoryDialogOpen(false);
-      setCategoryForm({ id: '', name: '', order: 0, imageUrl: '' });
+      setCategoryForm({ id: '', name: '', translations: {}, order: 0, imageUrl: '' });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -327,7 +329,7 @@ export default function AdminDashboard() {
     header.appendChild(title);
     
     const meta = document.createElement('p');
-    meta.innerText = `${t('generated_on')}: ${format(new Date(), 'PPpp')}`;
+    meta.innerText = `${t('generated_on')}: ${formatDate(new Date(), 'PPpp')}`;
     meta.style.fontSize = '12px';
     meta.style.color = '#94a3b8';
     meta.style.marginTop = '4px';
@@ -353,17 +355,17 @@ export default function AdminDashboard() {
       
       const nameCell = document.createElement('td');
       nameCell.className = 'item-name';
-      nameCell.innerText = item.name;
+      nameCell.innerText = t(item.name);
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
       qtyCell.className = 'qty-cell';
-      qtyCell.innerText = `${item.totalQty} ${item.unit}`;
+      qtyCell.innerText = `${item.totalQty} ${t(item.unit)}`;
       row.appendChild(qtyCell);
       
       const breakdownCell = document.createElement('td');
       breakdownCell.className = 'breakdown-text';
-      breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${item.unit}`).join(', ');
+      breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${t(item.unit)}`).join(', ');
       row.appendChild(breakdownCell);
       
       tbody.appendChild(row);
@@ -385,7 +387,7 @@ export default function AdminDashboard() {
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Purchase_List_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      pdf.save(`Purchase_List_${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
@@ -452,8 +454,8 @@ export default function AdminDashboard() {
         bValue = b.name.toLowerCase();
         break;
       case 'category':
-        aValue = (categories.find(c => c.id === a.categoryId)?.name || '').toLowerCase();
-        bValue = (categories.find(c => c.id === b.categoryId)?.name || '').toLowerCase();
+        aValue = t(categories.find(c => c.id === a.categoryId)?.name || '').toLowerCase();
+        bValue = t(categories.find(c => c.id === b.categoryId)?.name || '').toLowerCase();
         break;
       case 'price':
         aValue = a.priceRangeMin;
@@ -493,7 +495,7 @@ export default function AdminDashboard() {
           <h2 className="text-4xl font-black tracking-tight text-slate-900 mb-1">
             {userData?.role === 'super_admin' ? t('super_admin_dashboard') : t('admin_dashboard')}
           </h2>
-          <p className="text-slate-500 text-sm font-medium">{t('manage_orders_and_inventory')} with precision.</p>
+          <p className="text-slate-500 text-sm font-medium">{t('manage_orders_and_inventory')} {t('with_precision')}</p>
         </div>
         <motion.div 
           whileHover={{ scale: 1.02 }}
@@ -511,8 +513,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-10">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
+        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
               <div className="p-3 bg-emerald-50 rounded-full text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
@@ -520,17 +522,17 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="text-5xl font-black text-slate-900 tracking-tighter">{totalOrders}</div>
-            <div className="flex items-center mt-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+            <div className="flex items-center mt-auto pt-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2" />
-              {format(new Date(selectedDate), 'MMM dd, yyyy')}
+              {formatDate(new Date(selectedDate), 'MMM dd, yyyy')}
             </div>
           </div>
         </motion.div>
         
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
+        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Est. Revenue</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('est_revenue')}</span>
               <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-full text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-sm text-[11px] font-black">
                 RM
               </div>
@@ -539,20 +541,20 @@ export default function AdminDashboard() {
               <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
               {totalRevenueMin.toFixed(0)} - {totalRevenueMax.toFixed(0)}
             </div>
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-4">Live Market Estimates</p>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-auto pt-4">{t('live_market_estimates')}</p>
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="glass-card rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
+        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Restaurants</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('active_restaurants')}</span>
               <div className="p-3 bg-amber-50 rounded-full text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-sm">
                 <Users className="h-5 w-5" />
               </div>
             </div>
             <div className="text-5xl font-black text-slate-900 tracking-tighter">{activeRestaurants}</div>
-            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-4">Participation Today</p>
+            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-auto pt-4">{t('participation_today')}</p>
           </div>
         </motion.div>
       </div>
@@ -620,7 +622,7 @@ export default function AdminDashboard() {
           <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('orders_for')} {format(new Date(selectedDate), 'dd MMM yyyy')}</h4>
+                <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('orders_for')} {formatDate(new Date(selectedDate), 'dd MMM yyyy')}</h4>
                 {orders.some(o => o.status === 'submitted') && (
                   <Button 
                     onClick={bulkAcknowledge} 
@@ -691,9 +693,9 @@ export default function AdminDashboard() {
                                   {order.items.map((item: any, idx: number) => (
                                     <TableRow key={idx} className="border-slate-50">
                                       <TableCell className="py-4">
-                                        <span className="text-slate-900 font-bold">{item.name}</span>
+                                        <span className="text-slate-900 font-bold">{t(item.name)}</span>
                                       </TableCell>
-                                      <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {item.unit}</TableCell>
+                                      <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {t(item.unit)}</TableCell>
                                       <TableCell className="text-slate-600 text-right font-medium py-4">
                                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                                         {(item.priceRangeMin * item.quantity).toFixed(2)} - {(item.priceRangeMax * item.quantity).toFixed(2)}
@@ -723,7 +725,7 @@ export default function AdminDashboard() {
                             <ShoppingBag className="h-10 w-10 text-slate-300" />
                           </div>
                           <p className="text-slate-900 font-black tracking-tight">{t('no_orders_tonight')}</p>
-                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Orders for the selected date will appear here.</p>
++                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">{t('orders_date_appear')}</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -740,7 +742,7 @@ export default function AdminDashboard() {
               <DialogTrigger render={
                 <Button 
                   onClick={() => {
-                    setCategoryForm({ id: '', name: '', order: categories.length + 1, imageUrl: '' });
+                    setCategoryForm({ id: '', name: '', translations: {}, order: categories.length + 1, imageUrl: '' });
                     setIsCategoryDialogOpen(true);
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
@@ -758,14 +760,27 @@ export default function AdminDashboard() {
                     onChange={(val) => setCategoryForm({...categoryForm, imageUrl: val})}
                     label={t('category_image')}
                   />
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category_name')}</Label>
-                    <Input 
-                      value={categoryForm.name} 
-                      onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} 
-                      required 
-                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
-                    />
+                    {SUPPORTED_LANGUAGES.map(lang => (
+                      <div key={lang.code} className="flex items-center gap-3">
+                        <Badge variant="outline" className="w-16 justify-center font-black text-[10px] uppercase tracking-widest rounded-none">{lang.label}</Badge>
+                        <Input 
+                          value={categoryForm.translations?.[lang.code] || ''} 
+                          onChange={e => {
+                            const newTranslations = { ...(categoryForm.translations || {}), [lang.code]: e.target.value };
+                            setCategoryForm({
+                              ...categoryForm, 
+                              translations: newTranslations,
+                              ...(lang.code === 'en' ? { name: e.target.value } : {})
+                            });
+                          }} 
+                          required={lang.code === 'en'} 
+                          className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold flex-1"
+                          placeholder={lang.code === 'en' ? 'e.g. Vegetables' : 'e.g. 蔬菜'}
+                        />
+                      </div>
+                    ))}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('display_order')}</Label>
@@ -814,8 +829,9 @@ export default function AdminDashboard() {
                           key={category.id} 
                           category={category} 
                           t={t}
+                          td={td}
                           onEdit={(cat) => {
-                            setCategoryForm({ id: cat.id, name: cat.name, order: cat.order, imageUrl: cat.imageUrl || '' });
+                            setCategoryForm({ id: cat.id, name: cat.name, translations: cat.translations || {}, order: cat.order, imageUrl: cat.imageUrl || '' });
                             setIsCategoryDialogOpen(true);
                           }} 
                         />
@@ -829,7 +845,7 @@ export default function AdminDashboard() {
                               <Package className="h-10 w-10 text-slate-300" />
                             </div>
                             <p className="text-slate-900 font-black tracking-tight">{t('no_categories_found')}</p>
-                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Add a new category to get started.</p>
+                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">{t('add_category_started')}</p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -880,7 +896,7 @@ export default function AdminDashboard() {
               <DialogTrigger render={
                 <Button 
                   onClick={() => {
-                    setItemForm({ id: '', categoryId: '', name: '', priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+                    setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
                     setIsItemDialogOpen(true);
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
@@ -903,18 +919,31 @@ export default function AdminDashboard() {
                     <Select value={itemForm.categoryId} onValueChange={v => setItemForm({...itemForm, categoryId: v || ''})}>
                       <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
                       <SelectContent className="border-slate-100 shadow-xl rounded-none">
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{t(c.name)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('item_name')}</Label>
-                    <Input 
-                      value={itemForm.name} 
-                      onChange={e => setItemForm({...itemForm, name: e.target.value})} 
-                      required 
-                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
-                    />
+                    {SUPPORTED_LANGUAGES.map(lang => (
+                      <div key={lang.code} className="flex items-center gap-3">
+                        <Badge variant="outline" className="w-16 justify-center font-black text-[10px] uppercase tracking-widest rounded-none">{lang.label}</Badge>
+                        <Input 
+                          value={itemForm.translations?.[lang.code] || ''} 
+                          onChange={e => {
+                            const newTranslations = { ...(itemForm.translations || {}), [lang.code]: e.target.value };
+                            setItemForm({
+                              ...itemForm, 
+                              translations: newTranslations,
+                              ...(lang.code === 'en' ? { name: e.target.value } : {})
+                            });
+                          }} 
+                          required={lang.code === 'en'} 
+                          className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold flex-1"
+                          placeholder={lang.code === 'en' ? 'e.g. Fresh Tomatoes' : 'e.g. 新鲜西红柿'}
+                        />
+                      </div>
+                    ))}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -968,7 +997,7 @@ export default function AdminDashboard() {
                     <Select value={bulkCategoryForm.categoryId} onValueChange={v => setBulkCategoryForm({ categoryId: v || '' })}>
                       <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
                       <SelectContent className="border-slate-100 shadow-xl rounded-none">
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{t(c.name)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1079,15 +1108,15 @@ export default function AdminDashboard() {
                               <Package className="h-5 w-5 text-slate-300" />
                             </div>
                           )}
-                          <span className="font-bold text-slate-900">{item.name}</span>
+                          <span className="font-bold text-slate-900">{td(item)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-600 py-6 font-medium">{categories.find(c => c.id === item.categoryId)?.name || 'Unknown'}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">{td(categories.find(c => c.id === item.categoryId)) || t('unknown')}</TableCell>
                       <TableCell className="text-slate-600 py-6 font-medium">
                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                         {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-slate-600 py-6 font-medium">{item.unit}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">{t(item.unit)}</TableCell>
                       <TableCell className="py-6">
                         <Badge 
                           variant={item.isActive !== false ? "outline" : "secondary"} 
@@ -1102,7 +1131,7 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
                         <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest transition-opacity duration-300" onClick={() => {
-                          setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit, imageUrl: item.imageUrl || '' });
+                          setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, translations: item.translations || {}, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit, imageUrl: item.imageUrl || '' });
                           setIsItemDialogOpen(true);
                         }}>{t('edit')}</Button>
                       </TableCell>
@@ -1116,7 +1145,7 @@ export default function AdminDashboard() {
                             <Package className="h-10 w-10 text-slate-300" />
                           </div>
                           <p className="text-slate-900 font-black tracking-tight">{items.length === 0 ? t('no_items_found') : t('no_items_match')}</p>
-                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">Try adjusting your search or add a new item.</p>
+                          <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">{t('adjust_search_add_item')}</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1130,7 +1159,7 @@ export default function AdminDashboard() {
         <TabsContent value="report" className="space-y-6">
           <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('consolidated_purchase_list')} ({format(new Date(selectedDate), 'dd MMM yyyy')})</h4>
+              <h4 className="text-lg font-black text-slate-900 tracking-tight">{t('consolidated_purchase_list')} ({formatDate(new Date(selectedDate), 'dd MMM yyyy')})</h4>
               <Button onClick={handlePrintList} variant="outline" className="rounded-[1.5rem] border-white/50 bg-white/50 backdrop-blur-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 h-12 px-8 font-black text-[11px] uppercase tracking-widest transition-all shadow-sm flex items-center gap-2">
                 <Printer className="h-4 w-4" />
                 {t('print_list')}
@@ -1180,7 +1209,7 @@ export default function AdminDashboard() {
                               <ShoppingBag className="h-10 w-10 text-slate-300" />
                             </div>
                             <p className="text-slate-900 font-black tracking-tight">{t('no_items_to_purchase')}</p>
-                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">No orders have been placed for this date yet.</p>
+                            <p className="text-slate-400 text-xs font-medium mt-1 uppercase tracking-widest">{t('no_orders_placed_date')}</p>
                           </div>
                         </TableCell>
                       </TableRow>

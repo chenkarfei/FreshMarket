@@ -120,7 +120,7 @@ export default function UserManagement() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('role')}</Label>
-                      <p className="text-sm font-bold text-slate-900 capitalize">{selectedUserForDetails.role.replace('_', ' ')}</p>
+                      <p className="text-sm font-bold text-slate-900 capitalize">{t('role_' + selectedUserForDetails.role)}</p>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('status')}</Label>
@@ -134,11 +134,11 @@ export default function UserManagement() {
                   {selectedUserForDetails.role === 'restaurant' && (
                     <div className="grid grid-cols-1 gap-6 pt-6 border-t border-slate-100">
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</Label>
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('phone')}</Label>
                         <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.phone || 'N/A'}</p>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Address</Label>
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('address')}</Label>
                         <p className="text-sm font-bold text-slate-900">{selectedUserForDetails.address || 'N/A'}</p>
                       </div>
                     </div>
@@ -265,7 +265,7 @@ export default function UserManagement() {
                 >
                   <TableCell className="font-bold text-slate-900 py-6 pl-8">{u.name}</TableCell>
                   <TableCell className="text-slate-600 py-6 font-medium">{u.email}</TableCell>
-                  <TableCell className="capitalize text-slate-600 py-6 font-medium">{u.role.replace('_', ' ')}</TableCell>
+                  <TableCell className="capitalize text-slate-600 py-6 font-medium">{t('role_' + u.role)}</TableCell>
                   <TableCell className="py-6">
                     <span className={`inline-flex items-center rounded-none px-3 py-1 text-[10px] font-black uppercase tracking-widest ${u.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                       {u.isActive ? t('active') : t('inactive')}
