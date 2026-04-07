@@ -502,7 +502,11 @@ export default function RestaurantDashboard() {
             <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || 'all')}>
               <SelectTrigger className="h-10 w-full sm:w-48 rounded-none border-slate-100 bg-slate-50/50 focus:ring-emerald-50 text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
                 <Filter className="h-3.5 w-3.5 shrink-0" />
-                <SelectValue placeholder={t('all_categories')} />
+                <span className="truncate">
+                  {selectedCategory === 'all'
+                    ? t('all_categories')
+                    : td(categories.find(c => c.id === selectedCategory)) || t('all_categories')}
+                </span>
               </SelectTrigger>
               <SelectContent className="rounded-none border-slate-100 shadow-xl">
                 <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider py-3">{t('all_categories')}</SelectItem>
