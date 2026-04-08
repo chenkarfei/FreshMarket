@@ -355,7 +355,7 @@ export default function AdminDashboard() {
       
       const nameCell = document.createElement('td');
       nameCell.className = 'item-name';
-      nameCell.innerText = t(item.name);
+      nameCell.innerText = td(item);
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
@@ -693,7 +693,7 @@ export default function AdminDashboard() {
                                   {order.items.map((item: any, idx: number) => (
                                     <TableRow key={idx} className="border-slate-50">
                                       <TableCell className="py-4">
-                                        <span className="text-slate-900 font-bold">{t(item.name)}</span>
+                                        <span className="text-slate-900 font-bold">{td(items.find(i => i.id === item.itemId) || item)}</span>
                                       </TableCell>
                                       <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {t(item.unit)}</TableCell>
                                       <TableCell className="text-slate-600 text-right font-medium py-4">
@@ -1194,7 +1194,7 @@ export default function AdminDashboard() {
                             {item.details.map((d: any, i: number) => (
                               <span key={i} className="inline-flex items-center rounded-none bg-white/80 border border-white/50 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">
                                 <span className="text-slate-900 mr-2 uppercase tracking-widest">{d.restaurant}</span>
-                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-none">{d.quantity} {item.unit}</span>
+                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-none">{d.quantity} {t(item.unit)}</span>
                               </span>
                             ))}
                           </div>

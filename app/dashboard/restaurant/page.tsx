@@ -246,7 +246,7 @@ export default function RestaurantDashboard() {
       
       const nameCell = document.createElement('td');
       nameCell.className = 'item-name';
-      nameCell.innerText = td(item);
+      nameCell.innerText = td(items.find(i => i.id === item.itemId) || item);
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
@@ -574,14 +574,47 @@ export default function RestaurantDashboard() {
                     </div>
                   </div>
                   <div className="mt-10">
-                    <Button 
-                      onClick={() => addToCart(item)} 
-                      disabled={!canEdit} 
-                      className="w-full bg-slate-900 hover:bg-emerald-500 text-white border-none shadow-xl shadow-slate-900/10 hover:shadow-emerald-500/20 rounded-[1.5rem] h-14 font-black text-[11px] uppercase tracking-widest transition-all duration-500 active:scale-95"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('add_to_cart')}
-                    </Button>
+                    {cart.find(i => i.itemId === item.id) ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center justify-between bg-slate-50 p-1 rounded-[1.5rem] border border-slate-100 h-14">
+                          <button 
+                            onClick={() => updateQuantity(item.id, (cart.find(i => i.itemId === item.id)?.quantity || 0) - 1)} 
+                            disabled={!canEdit} 
+                            className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="font-black text-slate-900 text-lg">
+                            {cart.find(i => i.itemId === item.id)?.quantity}
+                          </span>
+                          <button 
+                            onClick={() => updateQuantity(item.id, (cart.find(i => i.itemId === item.id)?.quantity || 0) + 1)} 
+                            disabled={!canEdit} 
+                            className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-30 transition-all text-slate-600"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => updateQuantity(item.id, 0)}
+                          disabled={!canEdit}
+                          className="h-14 w-14 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={() => addToCart(item)} 
+                        disabled={!canEdit} 
+                        className="w-full bg-slate-900 hover:bg-emerald-500 text-white border-none shadow-xl shadow-slate-900/10 hover:shadow-emerald-500/20 rounded-[1.5rem] h-14 font-black text-[11px] uppercase tracking-widest transition-all duration-500 active:scale-95"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t('add_to_cart')}
+                      </Button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -635,7 +668,7 @@ export default function RestaurantDashboard() {
                         )}
                       </div>
                       <div>
-                        <h4 className="text-lg font-bold text-slate-900">{td(items.find(i => i.id === item.itemId))}</h4>
+                        <h4 className="text-lg font-bold text-slate-900">{td(items.find(i => i.id === item.itemId) || item)}</h4>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">
                           RM {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)} / {t(item.unit)}
                         </p>
@@ -806,7 +839,7 @@ export default function RestaurantDashboard() {
                           <TableBody>
                             {order.items.map((item: any, idx: number) => (
                               <TableRow key={idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                <TableCell className="text-slate-900 font-bold py-4">{td(items.find(i => i.id === item.itemId))}</TableCell>
+                                <TableCell className="text-slate-900 font-bold py-4">{td(items.find(i => i.id === item.itemId) || item)}</TableCell>
                                 <TableCell className="text-slate-600 py-4 font-medium">{item.quantity} {t(item.unit)}</TableCell>
                                 <TableCell className="text-slate-900 font-black text-right py-4">
                                   <span className="text-[10px] text-slate-400 mr-1 font-bold">RM</span>
