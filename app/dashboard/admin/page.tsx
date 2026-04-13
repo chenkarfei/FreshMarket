@@ -217,13 +217,13 @@ export default function AdminDashboard() {
     try {
       if (en && !zh) {
         const translated = await translateText(en, 'zh');
-        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated } }));
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated ?? '' } }));
       } else if (zh && !en) {
         const translated = await translateText(zh, 'en');
-        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, en: translated } }));
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, en: translated ?? '' } }));
       } else {
         const translated = await translateText(en, 'zh');
-        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated } }));
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated ?? '' } }));
       }
       toast.success(t('translation_complete'));
     } catch (e) {
