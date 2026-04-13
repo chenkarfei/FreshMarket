@@ -1103,7 +1103,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit_label')}</Label>
-                    <Select value={itemForm.unit} onValueChange={v => setItemForm({...itemForm, unit: v})}>
+                    <Select value={itemForm.unit} onValueChange={v => setItemForm({...itemForm, unit: v ?? ''})}>
                       <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold">
                         <span className="flex flex-1 text-left line-clamp-1">
                           {itemForm.unit ? (itemForm.unit === 'custom' ? t('other_custom_unit') : STANDARD_UNITS.find(u => u.value === itemForm.unit)?.label || itemForm.unit) : <span className="text-slate-500 font-normal">{t('select_unit')}</span>}
