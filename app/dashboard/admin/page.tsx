@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, updateDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText, CheckCircle2, Search, Printer, Sparkles } from 'lucide-react';
+import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, Pencil, CheckCircle2, Search, Printer, Sparkles, Trash2, Power, PowerOff } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -57,7 +57,7 @@ const STANDARD_UNITS = [
   { value: 'bundle', label: 'bundle (捆)' },
 ];
 
-function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdit: (category: any) => void, t: any, td: any }) {
+function SortableCategoryRow({ category, onEdit, onDelete, onToggleStatus, t, td }: { category: any, onEdit: (category: any) => void, onDelete: (id: string) => void, onToggleStatus: (id: string, current: boolean) => void, t: any, td: any }) {
   const {
     attributes,
     listeners,
@@ -74,7 +74,7 @@ function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdi
   };
 
   return (
-    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'opacity-50' : ''}>
+    <TableRow ref={setNodeRef} style={style} className={`${isDragging ? 'opacity-50' : ''} ${category.isActive === false ? 'opacity-40' : ''}`}>
       <TableCell className="w-12">
         <div {...attributes} {...listeners} className="cursor-grab hover:text-primary flex items-center justify-center">
           <GripVertical className="h-4 w-4" />
@@ -103,7 +103,52 @@ function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdi
       </TableCell>
       <TableCell className="font-medium text-slate-600">{category.order}</TableCell>
       <TableCell>
-        <Button variant="outline" size="sm" onClick={() => onEdit(category)}>{t('edit')}</Button>
+        <Badge 
+          variant={category.isActive !== false ? "outline" : "secondary"} 
+          className={`cursor-pointer transition-all hover:opacity-80 ${
+            category.isActive !== false 
+            ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none" 
+            : "bg-slate-100 text-slate-500 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none"
+          }`}
+          onClick={() => onToggleStatus(category.id, category.isActive !== false)}
+        >
+          {category.isActive !== false ? t('active') : t('inactive')}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right pr-8">
+        <div className="flex items-center justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 w-9 p-0 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all duration-200" 
+            onClick={() => onEdit(category)}
+            title={t('edit')}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`h-9 w-9 p-0 rounded-full transition-all duration-200 ${
+              category.isActive !== false 
+              ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50' 
+              : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+            }`} 
+            onClick={() => onToggleStatus(category.id, category.isActive !== false)}
+            title={category.isActive !== false ? t('deactivate') : t('activate')}
+          >
+            {category.isActive !== false ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 w-9 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all duration-200" 
+            onClick={() => onDelete(category.id)}
+            title={t('delete')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -136,6 +181,14 @@ export default function AdminDashboard() {
   const [isTranslatingCat, setIsTranslatingCat] = useState(false);
   const [isTranslatingItem, setIsTranslatingItem] = useState(false);
   const [isTranslatingUnit, setIsTranslatingUnit] = useState(false);
+
+  // Confirmation Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, title: string, message: string, onConfirm: () => void }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   const translateText = async (text: string, targetLang: string) => {
     try {
@@ -338,6 +391,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    setConfirmDialog({
+      open: true,
+      title: t('confirm_delete'),
+      message: t('confirm_bulk_delete').replace('{count}', selectedItems.length.toString()),
+      onConfirm: async () => {
+        try {
+          const deletePromises = selectedItems.map(itemId => 
+            deleteDoc(doc(db, 'items', itemId))
+          );
+          await Promise.all(deletePromises);
+          toast.success(t('delete_success'));
+          setSelectedItems([]);
+        } catch (error: any) {
+          toast.error(t('delete_failed') + ': ' + error.message);
+        }
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    });
+  };
+
   const handleBulkCategoryChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedItems.length === 0 || !bulkCategoryForm.categoryId) return;
@@ -350,6 +425,58 @@ export default function AdminDashboard() {
       setIsBulkCategoryDialogOpen(false);
       setSelectedItems([]);
       setBulkCategoryForm({ categoryId: '' });
+    } catch (error: any) {
+      toast.error(t('failed_to_update') + ': ' + error.message);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: t('confirm_delete'),
+      message: t('confirm_delete_category'),
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'categories', id));
+          toast.success(t('delete_success'));
+        } catch (error: any) {
+          toast.error(t('delete_failed') + ': ' + error.message);
+        }
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    });
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: t('confirm_delete'),
+      message: t('confirm_delete_item'),
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'items', id));
+          toast.success(t('delete_success'));
+        } catch (error: any) {
+          toast.error(t('delete_failed') + ': ' + error.message);
+        }
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    });
+  };
+
+  const handleToggleCategoryStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, 'categories', id), { isActive: !currentStatus });
+      toast.success(t('successfully') + ' ' + (!currentStatus ? t('activated') : t('deactivated')));
+    } catch (error: any) {
+      toast.error(t('failed_to_update') + ': ' + error.message);
+    }
+  };
+
+  const handleToggleItemStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, 'items', id), { isActive: !currentStatus });
+      toast.success(t('successfully') + ' ' + (!currentStatus ? t('activated') : t('deactivated')));
     } catch (error: any) {
       toast.error(t('failed_to_update') + ': ' + error.message);
     }
@@ -938,6 +1065,7 @@ export default function AdminDashboard() {
                       <TableHead className="w-12 py-6 pl-8"></TableHead>
                       <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('category_name')}</TableHead>
                       <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('display_order')}</TableHead>
+                      <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6">{t('status')}</TableHead>
                       <TableHead className="text-slate-400 font-black text-[10px] uppercase tracking-widest py-6 pr-8 text-right">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -956,6 +1084,8 @@ export default function AdminDashboard() {
                             setCategoryForm({ id: cat.id, name: cat.name, translations: cat.translations || {}, order: cat.order, imageUrl: cat.imageUrl || '' });
                             setIsCategoryDialogOpen(true);
                           }} 
+                          onDelete={handleDeleteCategory}
+                          onToggleStatus={handleToggleCategoryStatus}
                         />
                       ))}
                     </SortableContext>
@@ -1009,6 +1139,9 @@ export default function AdminDashboard() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setIsBulkCategoryDialogOpen(true)} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-none hover:bg-blue-50 hover:text-blue-600 transition-colors">
                       {t('change_category')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkDelete} className="text-[11px] font-black uppercase tracking-widest py-3 px-4 rounded-none hover:bg-rose-50 hover:text-rose-600 transition-colors border-t border-slate-100 mt-1">
+                      {t('delete_selected')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -1288,31 +1421,64 @@ export default function AdminDashboard() {
                       <TableCell className="py-6">
                         <Badge 
                           variant={item.isActive !== false ? "outline" : "secondary"} 
-                          className={
+                          className={`cursor-pointer transition-all hover:opacity-80 ${
                             item.isActive !== false 
                             ? "bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none" 
                             : "bg-slate-100 text-slate-500 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-none"
-                          }
+                          }`}
+                          onClick={() => handleToggleItemStatus(item.id, item.isActive !== false)}
                         >
                           {item.isActive !== false ? t('active') : t('inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
-                        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest transition-opacity duration-300" onClick={() => {
-                          const isStandardUnit = STANDARD_UNITS.some(u => u.value === item.unit);
-                          setItemForm({ 
-                            id: item.id, 
-                            categoryId: item.categoryId, 
-                            name: item.name, 
-                            translations: item.translations || {}, 
-                            priceRangeMin: item.priceRangeMin, 
-                            priceRangeMax: item.priceRangeMax, 
-                            unit: isStandardUnit ? item.unit : 'custom', 
-                            unitTranslations: isStandardUnit ? {} : (item.unitTranslations || { en: item.unit }),
-                            imageUrl: item.imageUrl || '' 
-                          });
-                          setIsItemDialogOpen(true);
-                        }}>{t('edit')}</Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-9 w-9 p-0 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all duration-200" 
+                            onClick={() => {
+                              const isStandardUnit = STANDARD_UNITS.some(u => u.value === item.unit);
+                              setItemForm({ 
+                                id: item.id, 
+                                categoryId: item.categoryId, 
+                                name: item.name, 
+                                translations: item.translations || {}, 
+                                priceRangeMin: item.priceRangeMin, 
+                                priceRangeMax: item.priceRangeMax, 
+                                unit: isStandardUnit ? item.unit : 'custom', 
+                                unitTranslations: isStandardUnit ? {} : (item.unitTranslations || { en: item.unit }),
+                                imageUrl: item.imageUrl || '' 
+                              });
+                              setIsItemDialogOpen(true);
+                            }}
+                            title={t('edit')}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={`h-9 w-9 p-0 rounded-full transition-all duration-200 ${
+                              item.isActive !== false 
+                              ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50' 
+                              : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                            }`} 
+                            onClick={() => handleToggleItemStatus(item.id, item.isActive !== false)}
+                            title={item.isActive !== false ? t('deactivate') : t('activate')}
+                          >
+                            {item.isActive !== false ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-9 w-9 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all duration-200" 
+                            onClick={() => handleDeleteItem(item.id)}
+                            title={t('delete')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </motion.tr>
                   ))}
@@ -1400,6 +1566,25 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="border-none shadow-2xl glass-card rounded-none max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-slate-900 tracking-tight">{confirmDialog.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-slate-600 font-medium">{confirmDialog.message}</p>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))} className="flex-1 rounded-none border-slate-200 font-black text-[11px] uppercase tracking-widest h-12">
+              {t('cancel')}
+            </Button>
+            <Button onClick={confirmDialog.onConfirm} className="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-none font-black text-[11px] uppercase tracking-widest h-12 shadow-lg shadow-rose-500/20">
+              {t('delete')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
