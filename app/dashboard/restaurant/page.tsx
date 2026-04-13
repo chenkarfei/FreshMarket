@@ -25,7 +25,7 @@ import domtoimage from 'dom-to-image-more';
 
 export default function RestaurantDashboard() {
   const { userData } = useAuth();
-  const { t, td, formatDate } = useLanguage();
+  const { t, td, tu, formatDate } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -250,7 +250,7 @@ export default function RestaurantDashboard() {
       row.appendChild(nameCell);
       
       const qtyCell = document.createElement('td');
-      qtyCell.innerText = `${item.quantity} ${t(item.unit)}`;
+      qtyCell.innerText = `${item.quantity} ${tu(item)}`;
       row.appendChild(qtyCell);
       
       const priceCell = document.createElement('td');
@@ -566,8 +566,8 @@ export default function RestaurantDashboard() {
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-xs font-bold text-slate-400">RM</span>
                       <span className="text-2xl font-black text-slate-900 tracking-tighter">{item.priceRangeMin.toFixed(2)}</span>
-                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">/ {t(item.unit)}</span>
-                    </div>
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">/ {tu(item)}</span>
+                      </div>
                     <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold bg-slate-100/50 p-3 rounded-none border border-white/50">
                       <Info className="h-3.5 w-3.5 text-emerald-500" />
                       {t('market_max_rm')} {item.priceRangeMax.toFixed(2)}
@@ -670,7 +670,7 @@ export default function RestaurantDashboard() {
                       <div>
                         <h4 className="text-lg font-bold text-slate-900">{td(items.find(i => i.id === item.itemId) || item)}</h4>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                          RM {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)} / {t(item.unit)}
+                          RM {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)} / {tu(item)}
                         </p>
                       </div>
                     </div>
@@ -840,7 +840,7 @@ export default function RestaurantDashboard() {
                             {order.items.map((item: any, idx: number) => (
                               <TableRow key={idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
                                 <TableCell className="text-slate-900 font-bold py-4">{td(items.find(i => i.id === item.itemId) || item)}</TableCell>
-                                <TableCell className="text-slate-600 py-4 font-medium">{item.quantity} {t(item.unit)}</TableCell>
+                                <TableCell className="text-slate-600 py-4 font-medium">{item.quantity} {tu(item)}</TableCell>
                                 <TableCell className="text-slate-900 font-black text-right py-4">
                                   <span className="text-[10px] text-slate-400 mr-1 font-bold">RM</span>
                                   {(item.priceRangeMin * item.quantity).toFixed(2)}

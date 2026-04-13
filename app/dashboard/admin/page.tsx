@@ -39,12 +39,23 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText, CheckCircle2, Search, Printer } from 'lucide-react';
+import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, FileText, CheckCircle2, Search, Printer, Sparkles } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
+import { GoogleGenAI } from "@google/genai";
+
+const STANDARD_UNITS = [
+  { value: 'kg', label: 'kg (公斤)' },
+  { value: 'g', label: 'g (克)' },
+  { value: 'pack', label: 'pack (包)' },
+  { value: 'tray', label: 'tray (托盘)' },
+  { value: 'box', label: 'box (箱)' },
+  { value: 'bottle', label: 'bottle (瓶)' },
+  { value: 'bundle', label: 'bundle (捆)' },
+];
 
 function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdit: (category: any) => void, t: any, td: any }) {
   const {
@@ -100,7 +111,7 @@ function SortableCategoryRow({ category, onEdit, t, td }: { category: any, onEdi
 
 export default function AdminDashboard() {
   const { userData } = useAuth();
-  const { t, td, formatDate } = useLanguage();
+  const { t, td, tu, formatDate } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -109,7 +120,7 @@ export default function AdminDashboard() {
   
   // Item Form State
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
-  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, translations: Record<string, string>, priceRangeMin: number | string, priceRangeMax: number | string, unit: string, imageUrl: string }>({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+  const [itemForm, setItemForm] = useState<{ id: string, categoryId: string, name: string, translations: Record<string, string>, priceRangeMin: number | string, priceRangeMax: number | string, unit: string, unitTranslations: Record<string, string>, imageUrl: string }>({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', unitTranslations: {}, imageUrl: '' });
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkCategoryDialogOpen, setIsBulkCategoryDialogOpen] = useState(false);
   const [isBulkAcknowledgeLoading, setIsBulkAcknowledgeLoading] = useState(false);
@@ -120,6 +131,107 @@ export default function AdminDashboard() {
   const [categoryForm, setCategoryForm] = useState<{ id: string, name: string, translations: Record<string, string>, order: number | string, imageUrl: string }>({ id: '', name: '', translations: {}, order: 0, imageUrl: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
+
+  // Translation States
+  const [isTranslatingCat, setIsTranslatingCat] = useState(false);
+  const [isTranslatingItem, setIsTranslatingItem] = useState(false);
+  const [isTranslatingUnit, setIsTranslatingUnit] = useState(false);
+
+  const translateText = async (text: string, targetLang: string) => {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('API key is missing');
+      }
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `Translate the following text to ${targetLang === 'zh' ? 'Simplified Chinese' : 'English'}. Only return the translated text, nothing else. Text: "${text}"`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+
+      return response.text?.trim();
+    } catch (error: any) {
+      console.error("Translation error:", error);
+      throw error;
+    }
+  };
+
+  const handleTranslateCategory = async () => {
+    const en = categoryForm.translations?.['en'];
+    const zh = categoryForm.translations?.['zh'];
+    if (!en && !zh) return toast.error(t('enter_text_to_translate'));
+
+    setIsTranslatingCat(true);
+    try {
+      if (en && !zh) {
+        const translated = await translateText(en, 'zh');
+        setCategoryForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+      } else if (zh && !en) {
+        const translated = await translateText(zh, 'en');
+        setCategoryForm(prev => ({ ...prev, name: translated, translations: { ...prev.translations, en: translated } }));
+      } else {
+        const translated = await translateText(en, 'zh');
+        setCategoryForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+      }
+      toast.success(t('translation_complete'));
+    } catch (e) {
+      toast.error(t('translation_failed'));
+    } finally {
+      setIsTranslatingCat(false);
+    }
+  };
+
+  const handleTranslateItem = async () => {
+    const en = itemForm.translations?.['en'];
+    const zh = itemForm.translations?.['zh'];
+    if (!en && !zh) return toast.error(t('enter_text_to_translate'));
+
+    setIsTranslatingItem(true);
+    try {
+      if (en && !zh) {
+        const translated = await translateText(en, 'zh');
+        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+      } else if (zh && !en) {
+        const translated = await translateText(zh, 'en');
+        setItemForm(prev => ({ ...prev, name: translated, translations: { ...prev.translations, en: translated } }));
+      } else {
+        const translated = await translateText(en, 'zh');
+        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+      }
+      toast.success(t('translation_complete'));
+    } catch (e) {
+      toast.error(t('translation_failed'));
+    } finally {
+      setIsTranslatingItem(false);
+    }
+  };
+
+  const handleTranslateUnit = async () => {
+    const en = itemForm.unitTranslations?.['en'];
+    const zh = itemForm.unitTranslations?.['zh'];
+    if (!en && !zh) return toast.error(t('enter_text_to_translate'));
+
+    setIsTranslatingUnit(true);
+    try {
+      if (en && !zh) {
+        const translated = await translateText(en, 'zh');
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated } }));
+      } else if (zh && !en) {
+        const translated = await translateText(zh, 'en');
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, en: translated } }));
+      } else {
+        const translated = await translateText(en, 'zh');
+        setItemForm(prev => ({ ...prev, unitTranslations: { ...prev.unitTranslations, zh: translated } }));
+      }
+      toast.success(t('translation_complete'));
+    } catch (e) {
+      toast.error(t('translation_failed'));
+    } finally {
+      setIsTranslatingUnit(false);
+    }
+  };
 
   useEffect(() => {
     if (userData?.role !== 'admin' && userData?.role !== 'super_admin') return;
@@ -150,20 +262,24 @@ export default function AdminDashboard() {
     setIsSubmitting(true);
     try {
       const itemId = itemForm.id || uuidv4();
+      const unitToSave = itemForm.unit === 'custom' ? (itemForm.unitTranslations?.['en'] || 'custom') : itemForm.unit;
+      const unitTranslationsToSave = itemForm.unit === 'custom' ? itemForm.unitTranslations : {};
+
       await setDoc(doc(db, 'items', itemId), {
         categoryId: itemForm.categoryId,
         name: itemForm.name,
         translations: itemForm.translations || {},
         priceRangeMin: Number(itemForm.priceRangeMin),
         priceRangeMax: Number(itemForm.priceRangeMax),
-        unit: itemForm.unit,
+        unit: unitToSave,
+        unitTranslations: unitTranslationsToSave,
         isActive: true,
         imageUrl: itemForm.imageUrl || ''
       }, { merge: true });
       
       toast.success(t('item_saved'));
       setIsItemDialogOpen(false);
-      setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+      setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', unitTranslations: {}, imageUrl: '' });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -360,12 +476,12 @@ export default function AdminDashboard() {
       
       const qtyCell = document.createElement('td');
       qtyCell.className = 'qty-cell';
-      qtyCell.innerText = `${item.totalQty} ${t(item.unit)}`;
+      qtyCell.innerText = `${item.totalQty} ${tu(item)}`;
       row.appendChild(qtyCell);
       
       const breakdownCell = document.createElement('td');
       breakdownCell.className = 'breakdown-text';
-      breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${t(item.unit)}`).join(', ');
+      breakdownCell.innerText = item.details.map((d: any) => `${d.restaurant}: ${d.quantity} ${tu(item)}`).join(', ');
       row.appendChild(breakdownCell);
       
       tbody.appendChild(row);
@@ -695,7 +811,7 @@ export default function AdminDashboard() {
                                       <TableCell className="py-4">
                                         <span className="text-slate-900 font-bold">{td(items.find(i => i.id === item.itemId) || item)}</span>
                                       </TableCell>
-                                      <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {t(item.unit)}</TableCell>
+                                      <TableCell className="text-slate-600 font-medium py-4">{item.quantity} {tu(item)}</TableCell>
                                       <TableCell className="text-slate-600 text-right font-medium py-4">
                                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                                         {(item.priceRangeMin * item.quantity).toFixed(2)} - {(item.priceRangeMax * item.quantity).toFixed(2)}
@@ -761,7 +877,13 @@ export default function AdminDashboard() {
                     label={t('category_image')}
                   />
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category_name')}</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category_name')}</Label>
+                      <Button type="button" variant="ghost" size="sm" onClick={handleTranslateCategory} disabled={isTranslatingCat} className="h-6 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 rounded-[1rem]">
+                        {isTranslatingCat ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                        {t('auto_translate')}
+                      </Button>
+                    </div>
                     {SUPPORTED_LANGUAGES.map(lang => (
                       <div key={lang.code} className="flex items-center gap-3">
                         <Badge variant="outline" className="w-16 justify-center font-black text-[10px] uppercase tracking-widest rounded-none">{lang.label}</Badge>
@@ -917,14 +1039,24 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('category')}</Label>
                     <Select value={itemForm.categoryId} onValueChange={v => setItemForm({...itemForm, categoryId: v || ''})}>
-                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold">
+                        <span className="flex flex-1 text-left line-clamp-1">
+                          {itemForm.categoryId ? td(categories.find(c => c.id === itemForm.categoryId)) : <span className="text-slate-500 font-normal">{t('select_category')}</span>}
+                        </span>
+                      </SelectTrigger>
                       <SelectContent className="border-slate-100 shadow-xl rounded-none">
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{t(c.name)}</SelectItem>)}
+                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{td(c)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('item_name')}</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('item_name')}</Label>
+                      <Button type="button" variant="ghost" size="sm" onClick={handleTranslateItem} disabled={isTranslatingItem} className="h-6 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 rounded-[1rem]">
+                        {isTranslatingItem ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                        {t('auto_translate')}
+                      </Button>
+                    </div>
                     {SUPPORTED_LANGUAGES.map(lang => (
                       <div key={lang.code} className="flex items-center gap-3">
                         <Badge variant="outline" className="w-16 justify-center font-black text-[10px] uppercase tracking-widest rounded-none">{lang.label}</Badge>
@@ -971,13 +1103,45 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('unit_label')}</Label>
-                    <Input 
-                      value={itemForm.unit} 
-                      onChange={e => setItemForm({...itemForm, unit: e.target.value})} 
-                      required 
-                      className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-12 font-bold"
-                    />
+                    <Select value={itemForm.unit} onValueChange={v => setItemForm({...itemForm, unit: v})}>
+                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold">
+                        <span className="flex flex-1 text-left line-clamp-1">
+                          {itemForm.unit ? (itemForm.unit === 'custom' ? t('other_custom_unit') : STANDARD_UNITS.find(u => u.value === itemForm.unit)?.label || itemForm.unit) : <span className="text-slate-500 font-normal">{t('select_unit')}</span>}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-100 shadow-xl rounded-none">
+                        {STANDARD_UNITS.map(u => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
+                        <SelectItem value="custom">{t('other_custom_unit')}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  
+                  {itemForm.unit === 'custom' && (
+                    <div className="space-y-4 mt-4 p-4 bg-slate-50 border border-slate-100 rounded-none">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('custom_unit')}</Label>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleTranslateUnit} disabled={isTranslatingUnit} className="h-6 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 rounded-[1rem]">
+                          {isTranslatingUnit ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                          {t('auto_translate')}
+                        </Button>
+                      </div>
+                      {SUPPORTED_LANGUAGES.map(lang => (
+                        <div key={lang.code} className="flex items-center gap-3">
+                          <Badge variant="outline" className="w-16 justify-center font-black text-[10px] uppercase tracking-widest rounded-none">{lang.label}</Badge>
+                          <Input
+                            value={itemForm.unitTranslations?.[lang.code] || ''}
+                            onChange={e => {
+                              const newTranslations = { ...(itemForm.unitTranslations || {}), [lang.code]: e.target.value };
+                              setItemForm({ ...itemForm, unitTranslations: newTranslations });
+                            }}
+                            required={lang.code === 'en'}
+                            className="rounded-none border-slate-200 focus:border-emerald-500 focus:ring-0 h-10 font-bold flex-1"
+                            placeholder={lang.code === 'en' ? 'e.g. Bucket' : 'e.g. 桶'}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1rem] h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {t('save_item')}
@@ -995,9 +1159,13 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('new_category')}</Label>
                     <Select value={bulkCategoryForm.categoryId} onValueChange={v => setBulkCategoryForm({ categoryId: v || '' })}>
-                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold"><SelectValue placeholder={t('select_category')} /></SelectTrigger>
+                      <SelectTrigger className="rounded-none border-slate-200 focus:ring-0 h-12 font-bold">
+                        <span className="flex flex-1 text-left line-clamp-1">
+                          {bulkCategoryForm.categoryId ? td(categories.find(c => c.id === bulkCategoryForm.categoryId)) : <span className="text-slate-500 font-normal">{t('select_category')}</span>}
+                        </span>
+                      </SelectTrigger>
                       <SelectContent className="border-slate-100 shadow-xl rounded-none">
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{t(c.name)}</SelectItem>)}
+                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{td(c)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1116,7 +1284,7 @@ export default function AdminDashboard() {
                         <span className="text-[10px] text-slate-400 mr-1 font-black">RM</span>
                         {item.priceRangeMin.toFixed(2)} - {item.priceRangeMax.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-slate-600 py-6 font-medium">{t(item.unit)}</TableCell>
+                      <TableCell className="text-slate-600 py-6 font-medium">{tu(item)}</TableCell>
                       <TableCell className="py-6">
                         <Badge 
                           variant={item.isActive !== false ? "outline" : "secondary"} 
@@ -1131,7 +1299,18 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="py-6 pr-8 text-right">
                         <Button variant="ghost" size="sm" className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-[1rem] font-bold text-[11px] uppercase tracking-widest transition-opacity duration-300" onClick={() => {
-                          setItemForm({ id: item.id, categoryId: item.categoryId, name: item.name, translations: item.translations || {}, priceRangeMin: item.priceRangeMin, priceRangeMax: item.priceRangeMax, unit: item.unit, imageUrl: item.imageUrl || '' });
+                          const isStandardUnit = STANDARD_UNITS.some(u => u.value === item.unit);
+                          setItemForm({ 
+                            id: item.id, 
+                            categoryId: item.categoryId, 
+                            name: item.name, 
+                            translations: item.translations || {}, 
+                            priceRangeMin: item.priceRangeMin, 
+                            priceRangeMax: item.priceRangeMax, 
+                            unit: isStandardUnit ? item.unit : 'custom', 
+                            unitTranslations: isStandardUnit ? {} : (item.unitTranslations || { en: item.unit }),
+                            imageUrl: item.imageUrl || '' 
+                          });
                           setIsItemDialogOpen(true);
                         }}>{t('edit')}</Button>
                       </TableCell>
@@ -1187,14 +1366,14 @@ export default function AdminDashboard() {
                         <TableCell className="font-black text-slate-900 py-8 pl-8 text-lg tracking-tight">{t(item.name)}</TableCell>
                         <TableCell className="py-8">
                           <span className="text-2xl font-black text-emerald-600 tracking-tighter">{item.totalQty}</span>
-                          <span className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">{t(item.unit)}</span>
+                          <span className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">{tu(item)}</span>
                         </TableCell>
                         <TableCell className="py-8 pr-8">
                           <div className="flex flex-wrap gap-2">
                             {item.details.map((d: any, i: number) => (
                               <span key={i} className="inline-flex items-center rounded-none bg-white/80 border border-white/50 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">
                                 <span className="text-slate-900 mr-2 uppercase tracking-widest">{d.restaurant}</span>
-                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-none">{d.quantity} {t(item.unit)}</span>
+                                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-none">{d.quantity} {tu(item)}</span>
                               </span>
                             ))}
                           </div>

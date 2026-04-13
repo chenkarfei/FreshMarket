@@ -200,6 +200,13 @@ export const translations: Translations = {
   "new_category": { en: "New Category", zh: "新分类" },
   "all_categories": { en: "All Categories", zh: "所有分类" },
   "update_order": { en: "Update Order", zh: "更新订单" },
+  "other_custom_unit": { en: "Other / Custom Unit", zh: "其他 / 自定义单位" },
+  "custom_unit": { en: "Custom Unit", zh: "自定义单位" },
+  "select_unit": { en: "Select Unit", zh: "选择单位" },
+  "enter_text_to_translate": { en: "Please enter text to translate", zh: "请输入要翻译的文本" },
+  "translation_complete": { en: "Translation complete", zh: "翻译完成" },
+  "translation_failed": { en: "Translation failed", zh: "翻译失败" },
+  "auto_translate": { en: "Auto Translate", zh: "自动翻译" },
   
   // Roles
   "role_super_admin": { en: "Super Admin", zh: "超级管理员" },
@@ -312,6 +319,7 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
   td: (item: { name: string, translations?: Record<string, string> } | undefined | null) => string;
+  tu: (item: { unit: string, unitTranslations?: Record<string, string> } | undefined | null) => string;
   formatDate: (date: Date | number, formatStr: string) => string;
 }
 
@@ -371,8 +379,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return t(item.name);
   };
 
+  const tu = (item: { unit: string, unitTranslations?: Record<string, string> } | undefined | null): string => {
+    if (!item) return '';
+    if (item.unitTranslations && item.unitTranslations[language]) {
+      return item.unitTranslations[language];
+    }
+    return t(item.unit);
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, td, formatDate }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, td, tu, formatDate }}>
       {children}
     </LanguageContext.Provider>
   );
