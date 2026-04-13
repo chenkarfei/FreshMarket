@@ -173,7 +173,7 @@ export default function AdminDashboard() {
         setCategoryForm(prev => ({ ...prev, name: translated ?? '', translations: { ...prev.translations, en: translated ?? '' } }));
       } else {
         const translated = await translateText(en, 'zh');
-        setCategoryForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+        setCategoryForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated ?? '' } }));
       }
       toast.success(t('translation_complete'));
     } catch (e) {
