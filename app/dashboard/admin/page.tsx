@@ -192,13 +192,13 @@ export default function AdminDashboard() {
     try {
       if (en && !zh) {
         const translated = await translateText(en, 'zh');
-        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated ?? '' } }));
       } else if (zh && !en) {
         const translated = await translateText(zh, 'en');
-        setItemForm(prev => ({ ...prev, name: translated, translations: { ...prev.translations, en: translated } }));
+        setItemForm(prev => ({ ...prev, name: translated, translations: { ...prev.translations, en: translated ?? '' } }));
       } else {
         const translated = await translateText(en, 'zh');
-        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated } }));
+        setItemForm(prev => ({ ...prev, translations: { ...prev.translations, zh: translated ?? '' } }));
       }
       toast.success(t('translation_complete'));
     } catch (e) {
