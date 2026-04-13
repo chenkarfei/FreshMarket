@@ -1018,7 +1018,7 @@ export default function AdminDashboard() {
               <DialogTrigger render={
                 <Button 
                   onClick={() => {
-                    setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', imageUrl: '' });
+                    setItemForm({ id: '', categoryId: '', name: '', translations: {}, priceRangeMin: 0, priceRangeMax: 0, unit: 'kg', unitTranslations: {}, imageUrl: '' });
                     setIsItemDialogOpen(true);
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] px-8 h-12 font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all duration-300"
