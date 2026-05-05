@@ -176,7 +176,7 @@ export function FinancialOverview({ allOrders, allUsers }: { allOrders: any[], a
                     <RechartsTooltip 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                       cursor={{ stroke: '#f1f5f9', strokeWidth: 2 }}
-                      formatter={(value: number) => [`RM ${value.toFixed(2)}`, t('total_revenue') || 'Revenue']}
+                      formatter={(value) => [`RM ${Number(value ?? 0).toFixed(2)}`, t('total_revenue') || 'Revenue']}
                     />
                     <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
                   </LineChart>
