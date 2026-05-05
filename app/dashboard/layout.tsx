@@ -65,6 +65,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  if (userData?.role === 'admin' || userData?.role === 'super_admin') {
+    return <div className="min-h-screen bg-[#f8f9fc] text-slate-800 font-sans">{children}</div>;
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <header className="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">

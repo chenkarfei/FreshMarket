@@ -25,6 +25,10 @@ export const translations: Translations = {
   "active": { en: "Active", zh: "活跃" },
   "inactive": { en: "Inactive", zh: "未活跃" },
   "search": { en: "Search...", zh: "搜索..." },
+  "dashboard": { en: "Dashboard", zh: "仪表盘" },
+  "report": { en: "Report", zh: "报告" },
+  "logout": { en: "Logout", zh: "退出登录" },
+  "no_data": { en: "No Data", zh: "暂无数据" },
   
   // Login Page
   "sign_in": { en: "Sign In", zh: "登录" },
@@ -38,6 +42,22 @@ export const translations: Translations = {
   "admin_dashboard": { en: "Admin Dashboard", zh: "管理员控制台" },
   "super_admin_dashboard": { en: "Super Admin Dashboard", zh: "超级管理员控制台" },
   "users": { en: "Users", zh: "用户" },
+  "financial_overview": { en: "Financial Overview", zh: "财务总览" },
+  "total_revenue": { en: "Total Revenue", zh: "总收入" },
+  "active_users": { en: "Active Users", zh: "活跃用户" },
+  "total_orders": { en: "Total Orders", zh: "总订单数" },
+  "avg_order_value": { en: "Avg Order Value", zh: "平均客单价" },
+  "revenue_performance": { en: "Revenue Performance", zh: "收入表现" },
+  "order_distribution": { en: "Order Distribution", zh: "订单分布" },
+  "completed": { en: "Completed", zh: "已完成" },
+  "processing": { en: "Processing", zh: "处理中" },
+  "cancelled": { en: "Cancelled", zh: "已取消" },
+  "last_7_days": { en: "Last 7 Days", zh: "过去 7 天" },
+  "last_14_days": { en: "Last 14 Days", zh: "过去 14 天" },
+  "last_30_days": { en: "Last 30 Days", zh: "过去 30 天" },
+  "vs_prev": { en: "vs prev", zh: "较上期 " },
+  "download_report": { en: "Download Report", zh: "下载报告" },
+  "export_data": { en: "Export Data", zh: "导出数据" },
   "tonights_orders": { en: "Tonight's Orders", zh: "今晚订单" },
   "manage_categories": { en: "Manage Categories", zh: "管理分类" },
   "manage_items": { en: "Manage Items", zh: "管理商品" },
@@ -376,7 +396,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const formatDate = (date: Date | number, formatStr: string): string => {
     const locale = language === 'zh' ? zhCN : enUS;
-    return format(date, formatStr, { locale });
+    let finalFormat = formatStr;
+    if (language === 'zh') {
+      if (formatStr === 'EEE, d MMMM yyyy') finalFormat = 'yyyy年M月d日 EEE';
+      else if (formatStr === 'MMM d') finalFormat = 'M月d日';
+      else if (formatStr === 'PPpp') finalFormat = 'yyyy年M月d日 HH:mm';
+      else if (formatStr === 'dd MMM yyyy') finalFormat = 'yyyy年M月d日';
+    }
+    return format(date, finalFormat, { locale });
   };
 
   const td = (item: { name: string, translations?: Record<string, string> } | undefined | null): string => {

@@ -39,8 +39,11 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, Pencil, CheckCircle2, Search, Printer, Sparkles, Trash2, Power, PowerOff } from 'lucide-react';
+import { GripVertical, TrendingUp, ShoppingBag, Users, Clock, Loader2, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, Pencil, CheckCircle2, Search, Printer, Sparkles, Trash2, Power, PowerOff, LayoutDashboard, FileText, Settings, LogOut, Menu, PieChart } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
+import { FinancialOverview } from '@/components/dashboard/admin/FinancialOverview';
+import { Logo } from '@/components/ui/logo';
+import { auth } from '@/lib/firebase';
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { motion } from 'motion/react';
@@ -178,9 +181,13 @@ export default function AdminDashboard() {
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
 
   // Translation States
-  const [isTranslatingCat, setIsTranslatingCat] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTranslatingItem, setIsTranslatingItem] = useState(false);
   const [isTranslatingUnit, setIsTranslatingUnit] = useState(false);
+  const [isTranslatingCat, setIsTranslatingCat] = useState(false);
 
   // Confirmation Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, title: string, message: string, onConfirm: () => void }>({
@@ -303,10 +310,20 @@ export default function AdminDashboard() {
       setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
+    const unsubAllOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
+      setAllOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubAllUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     return () => {
       unsubCategories();
       unsubItems();
       unsubOrders();
+      unsubAllOrders();
+      unsubAllUsers();
     };
   }, [userData, selectedDate]);
 
@@ -726,142 +743,161 @@ export default function AdminDashboard() {
   const totalRevenueMax = orders.reduce((acc, order) => acc + (order.totalMax || 0), 0);
   const activeRestaurants = new Set(orders.map(o => o.restaurantId)).size;
 
+  const menus = [
+    { id: 'dashboard', label: t('dashboard') || 'Dashboard', icon: LayoutDashboard },
+    { id: 'categories', label: t('manage_categories') || 'Manage Categories', icon: Filter },
+    { id: 'items', label: t('manage_items') || 'Manage Items', icon: Package },
+    { id: 'orders', label: t('tonights_orders') || 'Orders', icon: ShoppingBag },
+    { id: 'report', label: t('report') || 'Report', icon: FileText },
+    ...(userData?.role === 'super_admin' ? [{ id: 'users', label: t('users') || 'Users', icon: Users }] : []),
+  ];
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-8 relative"
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-        <div>
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 mb-1">
-            {userData?.role === 'super_admin' ? t('super_admin_dashboard') : t('admin_dashboard')}
-          </h2>
-          <p className="text-slate-500 text-sm font-medium">{t('manage_orders_and_inventory')} {t('with_precision')}</p>
+    <div className="flex h-screen bg-[#f8f9fc]">
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-100 transition-all duration-300 flex flex-col sm:relative overflow-hidden ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full sm:w-[4.5rem] sm:translate-x-0'}`}>
+        <div className="flex items-center py-8 border-b border-slate-100/50 shrink-0 px-4 h-24 whitespace-nowrap">
+          <div className="flex items-center justify-center w-10 shrink-0">
+            <Logo size={36} />
+          </div>
+          <span className={`font-black text-2xl tracking-tight ml-3 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+            Fresh
+          </span>
         </div>
-        <motion.div 
-          whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-none border border-white/50 shadow-sm"
-        >
-          <Label htmlFor="date-picker" className="whitespace-nowrap text-[10px] font-black text-slate-400 px-2 uppercase tracking-widest">{t('select_date')}</Label>
-          <Input 
-            id="date-picker" 
-            type="date" 
-            value={selectedDate} 
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-auto border-none shadow-none focus-visible:ring-0 bg-transparent text-sm font-bold h-8 text-emerald-600"
-          />
-        </motion.div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3 mb-10">
-        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
-              <div className="p-3 bg-emerald-50 rounded-full text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="text-5xl font-black text-slate-900 tracking-tighter">{totalOrders}</div>
-            <div className="flex items-center mt-auto pt-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2" />
-              {formatDate(new Date(selectedDate), 'MMM dd, yyyy')}
-            </div>
-          </div>
-        </motion.div>
-        
-        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-blue-500/10 group">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('est_revenue')}</span>
-              <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-full text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-sm text-[11px] font-black">
-                RM
-              </div>
-            </div>
-            <div className="text-4xl font-black text-slate-900 tracking-tighter">
-              <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
-              {totalRevenueMin.toFixed(0)} - {totalRevenueMax.toFixed(0)}
-            </div>
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-auto pt-4">{t('live_market_estimates')}</p>
-          </div>
-        </motion.div>
-
-        <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="glass-card h-full flex flex-col rounded-none p-8 transition-all hover:shadow-2xl hover:shadow-amber-500/10 group">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('active_restaurants')}</span>
-              <div className="p-3 bg-amber-50 rounded-full text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all duration-500 shadow-sm">
-                <Users className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="text-5xl font-black text-slate-900 tracking-tighter">{activeRestaurants}</div>
-            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-auto pt-4">{t('participation_today')}</p>
-          </div>
-        </motion.div>
-      </div>
-
-      <Tabs defaultValue={userData?.role === 'super_admin' ? 'users' : 'orders'} className="w-full">
-        <div className="px-1 sm:px-0 mb-10">
-          <TabsList className="flex w-full justify-start overflow-x-auto no-scrollbar bg-slate-50/50 backdrop-blur-md p-1 rounded-none gap-3 h-auto border border-slate-100 shadow-sm px-2 sm:px-1.5">
-            {userData?.role === 'super_admin' && (
-              <TabsTrigger 
-                value="users" 
-                className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="h-3.5 w-3.5" />
-                  {t('users')}
-                </div>
-              </TabsTrigger>
-            )}
-            <TabsTrigger 
-              value="orders"
-              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+        <div className="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-1 w-64">
+          <p className={`text-[10px] font-black text-slate-400 uppercase tracking-widest pl-3 mb-2 transition-opacity ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>Main</p>
+          {menus.map(menu => (
+            <button
+              key={menu.id}
+              onClick={() => { setActiveTab(menu.id); if (window.innerWidth < 640) setIsSidebarOpen(false); }}
+              className={`flex items-center w-full px-3 py-3 rounded-xl text-sm font-bold transition-all overflow-hidden ${
+                activeTab === menu.id 
+                ? 'bg-emerald-50 text-emerald-600' 
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
+              title={menu.label}
             >
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-3.5 w-3.5" />
+              <menu.icon className={`h-5 w-5 shrink-0 ${activeTab === menu.id ? 'text-emerald-500' : 'text-slate-400'}`} />
+              <span className={`whitespace-nowrap ml-3 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>{menu.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="p-3 border-t border-slate-100/50 w-64">
+          <div className={`flex items-center px-2 py-3 mb-2 rounded-xl border transition-colors ${isSidebarOpen ? 'bg-slate-50 border-slate-100' : 'bg-transparent border-transparent'}`}>
+            <div className={`h-8 w-8 shrink-0 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-black ${isSidebarOpen ? 'mr-3' : 'mr-0'}`}>
+              {userData?.name?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            <div className={`flex flex-col items-start overflow-hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+              <span className="text-sm font-black text-slate-800 truncate w-full text-left">{userData?.role === 'super_admin' ? t('role_super_admin') || 'Super Admin' : t('role_admin') || 'Admin'}</span>
+              <span className="text-[10px] font-black text-emerald-600 tracking-widest truncate w-full text-left">{userData?.email || userData?.name}</span>
+            </div>
+          </div>
+          <button onClick={() => auth.signOut()} className="flex items-center w-full px-3 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-all overflow-hidden" title={t('logout') || 'Logout'}>
+            <LogOut className="h-5 w-5 shrink-0 text-slate-400" />
+            <span className={`whitespace-nowrap ml-3 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>{t('logout') || 'Logout'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f9fafc]">
+        {/* Topbar */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100/50 flex items-center justify-between px-6 z-40 shrink-0">
+          <div className="flex items-center gap-4 w-full max-w-xl">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-400 hover:text-slate-600 pr-4 sm:border-r sm:border-slate-100/50 flex items-center justify-center">
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="relative w-full hidden sm:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder={t('search') || "Search..."} 
+                className="w-full bg-slate-50 border-none rounded-full h-11 pl-10 pr-4 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <LanguageSwitcher />
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsContent value="dashboard" className="mt-0">
+              <FinancialOverview allOrders={allOrders} allUsers={allUsers} />
+            </TabsContent>
+            {/* The rest of the content will be hidden visually (TabsList is gone now) */}
+
+
+      <TabsContent value="users" className="space-y-4">
+        <UserManagement />
+      </TabsContent>
+        
+        <TabsContent value="orders" className="mt-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+            <div>
+              <h2 className="text-4xl font-black tracking-tight text-slate-900 mb-1">
                 {t('tonights_orders')}
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="categories"
-              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
+              </h2>
+              <p className="text-slate-500 text-sm font-medium">{t('manage_orders_and_inventory')} {t('with_precision')}</p>
+            </div>
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-[1rem] border border-white/50 shadow-sm"
             >
-              <div className="flex items-center gap-2">
-                <Filter className="h-3.5 w-3.5" />
-                {t('manage_categories')}
+              <Label htmlFor="date-picker-orders" className="whitespace-nowrap text-[10px] font-black text-slate-400 px-2 uppercase tracking-widest">{t('select_date')}</Label>
+              <Input 
+                id="date-picker-orders" 
+                type="date" 
+                value={selectedDate} 
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-auto border-none shadow-none focus-visible:ring-0 bg-transparent text-sm font-bold h-8 text-emerald-600"
+              />
+            </motion.div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3 mb-10">
+            <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="glass-card h-full flex flex-col rounded-3xl p-8 transition-all hover:shadow-lg bg-white">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('tonights_orders')}</span>
+                  <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 shadow-sm">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="text-5xl font-black text-slate-900 tracking-tighter">{totalOrders}</div>
               </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="items"
-              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
-            >
-              <div className="flex items-center gap-2">
-                <Package className="h-3.5 w-3.5" />
-                {t('manage_items')}
+            </motion.div>
+            
+            <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <div className="glass-card h-full flex flex-col rounded-3xl p-8 transition-all hover:shadow-lg bg-white">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('est_revenue')}</span>
+                  <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-2xl text-blue-600 shadow-sm text-[11px] font-black">
+                    RM
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-slate-900 tracking-tighter">
+                  <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
+                  {totalRevenueMin.toFixed(0)} - {totalRevenueMax.toFixed(0)}
+                </div>
               </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="report"
-              className="rounded-none px-3 sm:px-8 py-2.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-500 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md transition-all duration-300 shrink-0"
-            >
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-3.5 w-3.5" />
-                {t('purchase_report')}
+            </motion.div>
+
+            <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <div className="glass-card h-full flex flex-col rounded-3xl p-8 transition-all hover:shadow-lg bg-white">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('active_restaurants')}</span>
+                  <div className="p-3 bg-amber-50 rounded-2xl text-amber-600 shadow-sm">
+                    <Users className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="text-5xl font-black text-slate-900 tracking-tighter">{activeRestaurants}</div>
               </div>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        
-        {userData?.role === 'super_admin' && (
-          <TabsContent value="users" className="space-y-4">
-            <UserManagement />
-          </TabsContent>
-        )}
-        
-        <TabsContent value="orders" className="space-y-6">
+            </motion.div>
+          </div>
+
           <div className="glass-card rounded-none overflow-hidden border border-white/50 shadow-xl">
             <div className="p-8 border-b border-slate-100 bg-white/50">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1585,6 +1621,8 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-    </motion.div>
+        </main>
+      </div>
+    </div>
   );
 }
