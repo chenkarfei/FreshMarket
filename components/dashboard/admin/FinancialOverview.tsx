@@ -43,7 +43,7 @@ export function FinancialOverview({ allOrders, allUsers }: { allOrders: any[], a
     allOrders.forEach(order => {
       // orderDate is typically YYYY-MM-DD
       const date = order.orderDate ? parseISO(order.orderDate) : (order.createdAt?.toDate ? order.createdAt.toDate() : new Date());
-      const revenue = order.totalMax || 0;
+      const revenue = order.totalMin || 0;
 
       if (date >= periodStart) {
         currentRev += revenue;
@@ -96,29 +96,87 @@ export function FinancialOverview({ allOrders, allUsers }: { allOrders: any[], a
     };
   }, [allOrders, allUsers, timeFilter, t, formatDate]);
 
+  const handleExportData = () => {
+    const headers = ['Order ID', 'Date', 'Amount (Min)', 'Amount (Max)', 'Status', 'Restaurant ID', 'Customer ID'];
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + allOrders.filter(o => o).map(order => `${order.id},${order.orderDate || (order.createdAt?.toDate ? order.createdAt.toDate().toISOString() : '')},${order.totalMin || 0},${order.totalMax || 0},${order.status},${order.restaurantId},${order.userId}`).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `orders_export_${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadReport = () => {
+    const reportContent = `Financial Report - Last ${timeFilter} Days
+Generated on: ${formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss')}
+
+Overview:
+------------------------
+Total Revenue: RM ${stats.currentRev.toFixed(2)}
+Total Orders: ${stats.currentOrders}
+Active Users: ${stats.activeUsers}
+Average Order Value: RM ${stats.currentAov.toFixed(2)}
+
+Growth vs Previous ${timeFilter} Days:
+------------------------
+Revenue Growth: ${(stats.revGrowth > 0 ? '+' : '')}${stats.revGrowth.toFixed(2)}%
+Orders Growth: ${(stats.ordersGrowth > 0 ? '+' : '')}${stats.ordersGrowth.toFixed(2)}%
+Users Growth: ${(stats.usersGrowth > 0 ? '+' : '')}${stats.usersGrowth.toFixed(2)}%
+AOV Growth: ${(stats.aovGrowth > 0 ? '+' : '')}${stats.aovGrowth.toFixed(2)}%
+`;
+
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `financial_report_${timeFilter}d_${formatDate(new Date(), 'yyyy-MM-dd')}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const StatCard = ({ title, value, icon: Icon, growth, suffix = '', prefix = '', color, delay }: any) => {
     const isPositive = growth >= 0;
+    
+    const colorMap: Record<string, string> = {
+      'bg-emerald-500': 'bg-emerald-50 text-emerald-600',
+      'bg-blue-500': 'bg-blue-50 text-blue-600',
+      'bg-orange-500': 'bg-orange-50 text-orange-600',
+      'bg-purple-500': 'bg-purple-50 text-purple-600',
+    };
+    const iconColors = colorMap[color] || 'bg-slate-50 text-slate-600';
+
     return (
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
-        <Card className="rounded-[1.5rem] border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
-          <CardContent className="p-6">
-            <div className={`h-12 w-12 rounded-2xl mb-4 flex items-center justify-center text-white shadow-inner ${color}`}>
-              <Icon className="h-6 w-6" />
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
+        <div className="glass-card h-full flex flex-col rounded-3xl p-8 transition-all hover:shadow-lg bg-white border border-white/60 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
+            <div className={`p-3 rounded-2xl shadow-sm ${iconColors}`}>
+              <Icon className="h-5 w-5" />
             </div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
-                {prefix && <span className="text-sm text-slate-500 mr-1">{prefix}</span>}
+          </div>
+          
+          <div className="flex flex-col min-w-0 flex-1 justify-center overflow-hidden">
+            <div className="flex items-baseline w-full max-w-full">
+              {prefix && <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1.5 shrink-0">{prefix}</span>}
+              <span className="text-3xl lg:text-4xl 2xl:text-5xl font-black text-slate-900 tracking-tight pr-2" style={{ whiteSpace: 'nowrap' }} title={String(value)}>
                 {value}
-                {suffix && <span className="text-sm text-slate-500 ml-1">{suffix}</span>}
-              </h3>
+              </span>
+              {suffix && <span className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1.5 shrink-0">{suffix}</span>}
             </div>
-            <div className={`flex items-center mt-3 text-xs font-bold ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {isPositive ? <ArrowUpRight className="h-3.5 w-3.5 mr-1" /> : <ArrowDownRight className="h-3.5 w-3.5 mr-1" />}
-              {isPositive ? '+' : ''}{growth.toFixed(1)}% <span className="text-slate-400 font-medium ml-1">{t('vs_prev') || 'vs prev'} {timeFilter}d</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <div className={`flex items-center mt-6 text-xs font-bold ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {isPositive ? <ArrowUpRight className="h-4 w-4 mr-1" /> : <ArrowDownRight className="h-4 w-4 mr-1" />}
+            {isPositive ? '+' : ''}{growth.toFixed(1)}% <span className="text-slate-400 font-medium ml-1.5">{t('vs_prev') || 'vs prev'} {timeFilter}d</span>
+          </div>
+        </div>
       </motion.div>
     );
   };
@@ -134,10 +192,10 @@ export function FinancialOverview({ allOrders, allUsers }: { allOrders: any[], a
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-full h-10 px-5 font-bold text-slate-600 border-slate-200">
+          <Button variant="outline" onClick={handleDownloadReport} className="rounded-full h-10 px-5 font-bold text-slate-600 border-slate-200">
             <Download className="h-4 w-4 mr-2" /> {t('download_report') || 'Download Report'}
           </Button>
-          <Button className="rounded-full h-10 px-5 font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/10">
+          <Button onClick={handleExportData} className="rounded-full h-10 px-5 font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/10">
             <FileText className="h-4 w-4 mr-2" /> {t('export_data') || 'Export Data'}
           </Button>
         </div>

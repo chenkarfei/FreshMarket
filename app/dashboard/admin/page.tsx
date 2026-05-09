@@ -866,21 +866,25 @@ export default function AdminDashboard() {
                     <ShoppingBag className="h-5 w-5" />
                   </div>
                 </div>
-                <div className="text-5xl font-black text-slate-900 tracking-tighter">{totalOrders}</div>
+                <div className="flex flex-col min-w-0 flex-1 justify-center overflow-hidden">
+                  <div className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight pr-2" style={{ whiteSpace: 'nowrap' }}>{totalOrders}</div>
+                </div>
               </div>
             </motion.div>
             
             <motion.div className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="glass-card h-full flex flex-col rounded-3xl p-8 transition-all hover:shadow-lg bg-white">
                 <div className="flex items-center justify-between mb-6">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('est_revenue')}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('guaranteed_revenue') || 'Guaranteed Rev.'}</span>
                   <div className="flex items-center justify-center h-11 w-11 bg-blue-50 rounded-2xl text-blue-600 shadow-sm text-[11px] font-black">
                     RM
                   </div>
                 </div>
-                <div className="text-4xl font-black text-slate-900 tracking-tighter">
-                  <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-widest">RM</span>
-                  {totalRevenueMin.toFixed(0)} - {totalRevenueMax.toFixed(0)}
+                <div className="flex flex-col justify-center min-w-0 flex-1 overflow-hidden">
+                  <div className="flex items-baseline w-full max-w-full">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1.5 shrink-0">RM</span>
+                    <span className="text-3xl xl:text-4xl 2xl:text-5xl font-black text-slate-900 tracking-tight pr-2" style={{ whiteSpace: 'nowrap' }} title={totalRevenueMin.toFixed(2)}>{totalRevenueMin.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -893,7 +897,9 @@ export default function AdminDashboard() {
                     <Users className="h-5 w-5" />
                   </div>
                 </div>
-                <div className="text-5xl font-black text-slate-900 tracking-tighter">{activeRestaurants}</div>
+                <div className="flex flex-col min-w-0 flex-1 justify-center overflow-hidden">
+                  <div className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight pr-2" style={{ whiteSpace: 'nowrap' }}>{activeRestaurants}</div>
+                </div>
               </div>
             </motion.div>
           </div>
